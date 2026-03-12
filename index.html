@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homelab · Detective Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Permanent+Marker&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════ BASE ═══════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cork: #6b4820; --cork2: #7d5828;
+  --paper: #fdf6e3; --paper-warm: #fef0c4; --paper-blue: #deeeff;
+  --paper-green: #e4f5e9; --paper-pink: #fde8e8;
+  --ink: #1e120a; --ink-faded: rgba(30,18,10,0.55);
+  --red: #b71c1c; --orange: #d35400; --yellow: #e6a817;
+  --shadow: rgba(0,0,0,0.45); --tape: rgba(255,240,180,0.72);
+  --bg: #100a04; --accent: #e67e22;
+  --font-heading: 'Permanent Marker', cursive;
+  --font-body: 'Caveat', cursive;
+  --title-color: #fdf6e3;
+  --title-highlight: #e67e22;
+}
+/* ═══════════════════ SNAP КОНТЕЙНЕР ═══════════════════ */
+.snap-container {
+  height: 100vh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+.snap-section {
+  scroll-snap-align: start;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); font-family: 'Caveat', cursive; overflow-x: hidden; }
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+
+/* ═══════════════════ HERO ═══════════════════ */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative; overflow: hidden; padding: 3rem 2rem 5rem;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(180,100,10,0.18) 0%, transparent 70%), var(--bg);
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 60px 60px; pointer-events: none;
+}
+.hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+}
+.hero-deco { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.hero-content { position: relative; z-index: 1; text-align: center; max-width: 860px; width: 100%; }
+.hero-eyebrow {
+  font-family: 'Caveat', cursive; font-size: 1.1rem; letter-spacing: 0.25em;
+  text-transform: uppercase; color: rgba(253,240,196,0.45); margin-bottom: 1.2rem;
+  opacity: 0; animation: fadeUp 0.8s ease 0.3s forwards;
+}
+.hero-title {
+  font-family: 'Permanent Marker', cursive;
+  font-size: clamp(3.5rem, 9vw, 7.5rem); line-height: 1;
+  margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25em;
+}
+.title-word { display: inline-flex; }
+.title-char {
+  display: inline-block; color: #fdf6e3; opacity: 0;
+  transform: translateY(40px) rotate(var(--r));
+  animation: charIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  animation-delay: var(--d);
+  text-shadow: 3px 4px 0 rgba(0,0,0,0.4), 6px 8px 20px rgba(0,0,0,0.25);
+}
+.title-word.highlight .title-char {
+  color: var(--accent);
+  text-shadow: 2px 3px 0 rgba(210,84,0,0.35), 6px 8px 20px rgba(0,0,0,0.3);
+}
+.hero-sub {
+  font-family: 'Caveat', cursive; font-size: clamp(1.2rem, 2.8vw, 1.8rem);
+  color: rgba(253,246,227,0.6); line-height: 1.7; margin-bottom: 2.8rem;
+  opacity: 0; animation: fadeUp 0.8s ease 1.8s forwards;
+}
+.hero-links { display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap; opacity: 0; animation: fadeUp 0.8s ease 2.2s forwards; }
+.hero-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.8rem;
+  font-family: 'Caveat', cursive; font-size: 1.2rem; font-weight: 600; text-decoration: none;
+  border: 2px solid; position: relative; transition: all 0.25s ease;
+  clip-path: polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+}
+.hero-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.hero-btn.primary:hover { background: #d35400; border-color: #d35400; transform: translateY(-3px) rotate(-0.5deg); }
+.hero-btn.secondary { background: transparent; border-color: rgba(253,246,227,0.25); color: rgba(253,246,227,0.75); }
+.hero-btn.secondary:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-3px) rotate(0.5deg); }
+.scroll-down {
+  position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  font-family: 'Caveat', cursive; font-size: 0.95rem; color: rgba(253,246,227,0.3);
+  opacity: 0; animation: fadeUp 0.8s ease 3s forwards, bounce 2.5s ease infinite;
+  z-index: 1; letter-spacing: 0.1em;
+}
+.scroll-arr { font-size: 1.4rem; animation: arrowDrop 1.5s ease 4s infinite; }
+
+/* ═══════════════════ BOARD BAR ═══════════════════ */
+.board-bar {
+  position: sticky; top: 0; z-index: 200;
+  background: #0d0700; border-bottom: 2px solid var(--cork);
+  padding: 0.9rem 2rem; display: flex; align-items: center;
+  justify-content: space-between; gap: 1rem;
+}
+.board-bar-title { font-family: 'Permanent Marker', cursive; font-size: 1.3rem; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
+.board-bar-hint { font-family: 'Caveat', cursive; font-size: 1rem; color: rgba(253,246,227,0.35); display: flex; align-items: center; gap: 0.4rem; }
+.legend { display: flex; gap: 1rem; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 0.35rem; font-family: 'Caveat', cursive; font-size: 0.9rem; color: rgba(253,246,227,0.5); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 4px currentColor; }
+
+/* ═══════════════════ BOARD ═══════════════════ */
+.board-section {
+  flex-direction: column;
+}
+.board-bar {
+  flex-shrink: 0;
+}
+.board-container {
+  flex: 1;  /* замените существующий height: 88vh на flex: 1 */
+  width: 100%;
+  overflow: hidden;
+  cursor: grab;
+  position: relative;
+  background-color: var(--cork2);
+  background-image: url(...); 
+}
+.board-container::after {
+  content: ''; position: absolute; inset: 0;
+  box-shadow: inset 0 0 120px rgba(0,0,0,0.5); pointer-events: none; z-index: 100;
+}
+.board-container:active { cursor: grabbing; }
+.board { position: absolute; will-change: transform; }
+#conn-svg { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 2; overflow: visible; }
+
+/* ═══════════════════ CARDS ═══════════════════ */
+.card {
+  position: absolute; background: var(--paper); padding: 1.1rem 1rem 1rem;
+  z-index: 10; transform-origin: center top; opacity: 0;
+  box-shadow: 3px 4px 12px var(--shadow), 1px 2px 0 rgba(255,255,255,0.15) inset;
+  transition: box-shadow 0.25s; min-width: 150px; filter: url(#paper-warp);
+}
+.card:hover { z-index: 50; box-shadow: 6px 8px 24px rgba(0,0,0,0.6), 1px 2px 0 rgba(255,255,255,0.15) inset; }
+.pin {
+  position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 20px; border-radius: 50%; z-index: 20;
+  box-shadow: inset -2px -2px 3px rgba(0,0,0,0.4), inset 2px 2px 3px rgba(255,255,255,0.3), 2px 3px 6px rgba(0,0,0,0.5);
+}
+.pin::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 9px; background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent); border-radius: 0 0 3px 3px;
+}
+.tape-h {
+  position: absolute; height: 20px; width: 55px; top: -8px; left: 50%;
+  transform: translateX(-50%) rotate(var(--tape-r, 0deg));
+  background: var(--tape); border-left: 1px solid rgba(200,170,100,0.4); border-right: 1px solid rgba(200,170,100,0.4);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12); z-index: 15;
+}
+.card-icon { font-size: 2rem; display: block; text-align: center; margin-bottom: 0.25rem; margin-top: 0.3rem; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.2)); }
+.card-label { font-family: 'Permanent Marker', cursive; font-size: 1rem; color: var(--ink); text-align: center; line-height: 1.2; margin-bottom: 0.2rem; }
+.card-type-badge {
+  font-family: 'Caveat', cursive; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; text-align: center; padding: 1px 6px; border-radius: 2px;
+  display: block; margin: 0 auto 0.4rem; width: fit-content;
+}
+.card-desc { font-family: 'Kalam', cursive; font-size: 0.82rem; color: var(--ink-faded); text-align: center; line-height: 1.4; margin-bottom: 0.45rem; border-top: 1px dashed rgba(30,18,10,0.15); padding-top: 0.35rem; }
+.card-specs { list-style: none; margin-top: 0.3rem; }
+.card-specs li { font-family: 'Caveat', cursive; font-size: 0.78rem; color: var(--ink-faded); padding: 0.1rem 0; line-height: 1.3; }
+.card-specs li::before { content: '▸ '; color: var(--red); font-size: 0.65rem; }
+.card-link { display: block; text-align: center; font-family: 'Caveat', cursive; font-size: 0.85rem; color: #1a6ea8; margin-top: 0.5rem; text-decoration: none; border-top: 1px dashed rgba(30,18,10,0.1); padding-top: 0.3rem; }
+.card-link:hover { text-decoration: underline; }
+
+/* ═══════════════════ SKILL NOTES ═══════════════════ */
+.skill-note {
+  position: absolute; padding: 0.55rem 0.9rem 0.7rem; z-index: 9; opacity: 0;
+  transform-origin: center top; min-width: 80px; text-align: center;
+  box-shadow: 2px 3px 10px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.2) inset; filter: url(#paper-warp);
+}
+.skill-note::before {
+  content: ''; position: absolute; top: -6px; left: 50%;
+  transform: translateX(-50%) rotate(var(--tape-r, -2deg));
+  width: 32px; height: 12px; background: var(--tape); border: 1px solid rgba(200,170,100,0.4);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15); z-index: 16;
+}
+.skill-text { font-family: 'Caveat', cursive; font-weight: 700; font-size: 0.95rem; color: var(--ink); display: block; }
+.skill-icon { font-size: 1.1rem; display: block; margin-bottom: 0.1rem; }
+
+/* ═══════════════════ ANNOTATIONS ═══════════════════ */
+.annotation {
+  position: absolute; font-family: 'Caveat', cursive; font-size: 0.9rem;
+  color: rgba(255,240,200,0.45); z-index: 5; pointer-events: none;
+  transform: rotate(var(--r, 0deg)); max-width: 150px; line-height: 1.4;
+}
+
+/* ═══════════════════ STATS STRIP ═══════════════════ */
+.stats-footer-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* равномерное распределение */
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--bg);
+}
+.stat-item:last-child { border-right: none; }
+.stat-item.visible { opacity: 1; transform: translateY(0); }
+.stat-num { display: block; font-family: 'Permanent Marker', cursive; font-size: 3.2rem; color: var(--accent); line-height: 1; text-shadow: 2px 3px 0 rgba(211,84,0,0.3); }
+.stat-lbl { display: block; font-family: 'Caveat', cursive; font-size: 1.05rem; color: rgba(253,246,227,0.5); margin-top: 0.3rem; }
+
+/* ═══════════════════ FOOTER ═══════════════════ */
+footer {
+  flex-shrink: 0;
+  background: #080400; border-top: 1px solid rgba(107,72,32,0.35);
+  padding: 2.5rem 2rem; text-align: center;
+  font-family: 'Caveat', cursive; color: rgba(253,246,227,0.25); font-size: 1rem; line-height: 1.8;
+}
+footer a { color: rgba(230,126,34,0.5); text-decoration: none; }
+footer a:hover { color: var(--accent); }
+
+/* ═══════════════════ ZOOM BADGE ═══════════════════ */
+.zoom-badge {
+  position: absolute; bottom: 1.2rem; right: 1.5rem; z-index: 150;
+  background: rgba(0,0,0,0.6); border: 1px solid rgba(107,72,32,0.5);
+  color: rgba(253,246,227,0.45); font-family: 'Caveat', cursive; font-size: 0.9rem;
+  padding: 0.4rem 0.9rem; border-radius: 3px; pointer-events: none; display: flex; align-items: center; gap: 0.5rem;
+}
+
+/* ═══════════════════ KEYFRAMES ═══════════════════ */
+@keyframes charIn { 0% { opacity: 0; transform: translateY(40px) rotate(var(--r)); } 100% { opacity: 1; transform: translateY(0) rotate(var(--r)); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bounce { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+@keyframes arrowDrop { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(5px); } }
+@keyframes pinDrop { 0% { opacity: 0; transform: var(--rot) translateY(-50px) scale(0.6); } 60% { transform: var(--rot) translateY(6px) scale(1.02); } 80% { transform: var(--rot) translateY(-3px) scale(0.99); } 100% { opacity: 1; transform: var(--rot) translateY(0) scale(1); } }
+@keyframes noteAppear { 0% { opacity: 0; transform: var(--rot) scale(0.5) rotate(20deg); } 70% { transform: var(--rot) scale(1.05) rotate(-1deg); } 100% { opacity: 1; transform: var(--rot); } }
+@keyframes titleWobble { 0%,100% { transform: translateY(0) rotate(var(--r)); } 25% { transform: translateY(-3px) rotate(calc(var(--r) + 1deg)); } 75% { transform: translateY(2px) rotate(calc(var(--r) - 1deg)); } }
+.title-char.done {
+  opacity: 1 !important;
+  animation: titleWobble 4s ease-in-out infinite;
+  animation-delay: var(--wd, 0s);
+}
+/* ══════════════════════════════════════════════════
+   ADMIN SYSTEM
+══════════════════════════════════════════════════ */
+
+/* ── Trigger button (gear icon, fixed bottom-right) */
+/* #admin-trigger {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9000;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(20,10,0,0.85); border: 1px solid rgba(107,72,32,0.6);
+  color: rgba(230,126,34,0.5); font-size: 1.2rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.25s; backdrop-filter: blur(6px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+} */
+#admin-trigger:hover { background: rgba(40,20,0,0.95); color: var(--accent); border-color: var(--accent); transform: rotate(30deg); }
+#admin-trigger.active { color: var(--accent); border-color: var(--accent); transform: rotate(60deg); }
+
+/* ── Login modal */
+#login-modal {
+  position: fixed; inset: 0; z-index: 9500;
+  background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+#login-modal.open { opacity: 1; pointer-events: all; }
+.login-box {
+  background: #1a0f05; border: 1px solid rgba(107,72,32,0.6);
+  border-radius: 4px; padding: 2.5rem 2.5rem 2rem;
+  width: 360px; max-width: calc(100vw - 2rem);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  transform: translateY(20px) scale(0.97); transition: transform 0.3s;
+}
+#login-modal.open .login-box { transform: none; }
+.login-title {
+  font-family: 'Permanent Marker', cursive; font-size: 1.6rem;
+  color: var(--accent); margin-bottom: 0.4rem; text-align: center;
+}
+.login-sub { font-family: 'Caveat', cursive; font-size: 1rem; color: rgba(253,246,227,0.35); text-align: center; margin-bottom: 1.8rem; }
+.login-input {
+  width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(107,72,32,0.5);
+  border-radius: 3px; color: rgba(253,246,227,0.9); padding: 0.7rem 1rem;
+  font-family: 'Caveat', cursive; font-size: 1.1rem; outline: none;
+  transition: border-color 0.2s; margin-bottom: 0.8rem;
+}
+.login-input:focus { border-color: var(--accent); }
+.login-input.error { border-color: #e74c3c; animation: shake 0.4s ease; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.login-err { font-family: 'Caveat', cursive; font-size: 0.95rem; color: #e74c3c; min-height: 1.2rem; margin-bottom: 0.8rem; }
+.login-btn {
+  width: 100%; background: var(--accent); border: none; color: #fff;
+  font-family: 'Caveat', cursive; font-size: 1.2rem; font-weight: 700;
+  padding: 0.7rem; border-radius: 3px; cursor: pointer; transition: background 0.2s;
+}
+.login-btn:hover { background: #d35400; }
+.login-hint { font-family: 'Caveat', cursive; font-size: 0.85rem; color: rgba(253,246,227,0.2); text-align: center; margin-top: 1.2rem; }
+.login-close-row { display: flex; justify-content: flex-end; margin-bottom: 0.5rem; }
+.login-x { background: none; border: none; color: rgba(253,246,227,0.3); font-size: 1.2rem; cursor: pointer; transition: color 0.2s; }
+.login-x:hover { color: rgba(253,246,227,0.7); }
+
+/* ── Admin panel (right sidebar) */
+#admin-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 9100;
+  width: min(520px, 100vw); background: #140c04;
+  border-left: 2px solid rgba(107,72,32,0.5);
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform 0.38s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+}
+#admin-panel.open { transform: translateX(0); }
+
+.ap-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.2rem; border-bottom: 1px solid rgba(107,72,32,0.4);
+  background: #0d0700; flex-shrink: 0;
+}
+.ap-title { font-family: 'Permanent Marker', cursive; font-size: 1.3rem; color: var(--accent); }
+.ap-close {
+  background: none; border: 1px solid rgba(107,72,32,0.4); color: rgba(253,246,227,0.5);
+  width: 32px; height: 32px; border-radius: 3px; cursor: pointer;
+  font-size: 1rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.ap-close:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Tabs */
+.ap-tabs {
+  display: flex; overflow-x: auto; border-bottom: 1px solid rgba(107,72,32,0.4);
+  flex-shrink: 0; background: #0d0700;
+  scrollbar-width: none;
+}
+.ap-tabs::-webkit-scrollbar { display: none; }
+.ap-tab {
+  flex-shrink: 0; padding: 0.65rem 0.9rem; background: none; border: none;
+  color: rgba(253,246,227,0.4); font-family: 'Caveat', cursive; font-size: 1rem;
+  cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.ap-tab:hover { color: rgba(253,246,227,0.7); }
+.ap-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Body */
+.ap-body { flex: 1; overflow-y: auto; padding: 1rem 1rem 0; scrollbar-width: thin; scrollbar-color: rgba(107,72,32,0.5) transparent; }
+.ap-body::-webkit-scrollbar { width: 5px; }
+.ap-body::-webkit-scrollbar-thumb { background: rgba(107,72,32,0.5); border-radius: 3px; }
+
+/* Footer */
+.ap-footer {
+  padding: 0.9rem 1rem; border-top: 1px solid rgba(107,72,32,0.4);
+  display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap; background: #0d0700;
+}
+.ap-apply {
+  flex: 1; background: var(--accent); border: none; color: #fff;
+  font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700;
+  padding: 0.6rem 1rem; border-radius: 3px; cursor: pointer; transition: background 0.2s;
+}
+.ap-apply:hover { background: #d35400; }
+.ap-secondary {
+  background: none; border: 1px solid rgba(107,72,32,0.5); color: rgba(253,246,227,0.5);
+  font-family: 'Caveat', cursive; font-size: 1rem; padding: 0.6rem 0.9rem;
+  border-radius: 3px; cursor: pointer; transition: all 0.2s;
+}
+.ap-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Section heading */
+.ap-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+.ap-section-title { font-family: 'Caveat', cursive; font-size: 1rem; color: rgba(253,246,227,0.4); text-transform: uppercase; letter-spacing: 0.12em; }
+.ap-add-btn {
+  background: none; border: 1px dashed rgba(107,72,32,0.6); color: rgba(230,126,34,0.6);
+  font-family: 'Caveat', cursive; font-size: 0.9rem; padding: 0.25rem 0.7rem;
+  border-radius: 3px; cursor: pointer; transition: all 0.2s;
+}
+.ap-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Item row */
+.ap-item {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(107,72,32,0.3);
+  border-radius: 4px; margin-bottom: 0.5rem; overflow: hidden;
+}
+.ap-item-head {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.8rem; cursor: pointer; transition: background 0.15s;
+}
+.ap-item-head:hover { background: rgba(255,255,255,0.04); }
+.ap-item-icon { font-size: 1.2rem; flex-shrink: 0; }
+.ap-item-info { flex: 1; min-width: 0; }
+.ap-item-name { font-family: 'Caveat', cursive; font-size: 1rem; color: rgba(253,246,227,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ap-item-meta { font-family: 'Caveat', cursive; font-size: 0.8rem; color: rgba(253,246,227,0.3); }
+.ap-item-actions { display: flex; gap: 0.3rem; flex-shrink: 0; }
+.ap-btn-edit, .ap-btn-del {
+  background: none; border: 1px solid; border-radius: 3px; padding: 0.2rem 0.5rem;
+  font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+}
+.ap-btn-edit { border-color: rgba(41,128,185,0.4); color: rgba(41,128,185,0.7); }
+.ap-btn-edit:hover { border-color: #2980b9; color: #2980b9; background: rgba(41,128,185,0.1); }
+.ap-btn-del { border-color: rgba(192,57,43,0.4); color: rgba(192,57,43,0.7); }
+.ap-btn-del:hover { border-color: #c0392b; color: #c0392b; background: rgba(192,57,43,0.1); }
+
+/* Inline form */
+.ap-form { display: none; padding: 0.8rem; border-top: 1px solid rgba(107,72,32,0.3); background: rgba(0,0,0,0.2); }
+.ap-form.open { display: block; }
+.ap-field { margin-bottom: 0.65rem; }
+.ap-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.65rem; }
+.ap-field-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.65rem; }
+.ap-label { display: block; font-family: 'Caveat', cursive; font-size: 0.85rem; color: rgba(253,246,227,0.4); margin-bottom: 0.2rem; }
+.ap-input, .ap-select, .ap-textarea {
+  width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(107,72,32,0.4);
+  border-radius: 3px; color: rgba(253,246,227,0.9); padding: 0.45rem 0.6rem;
+  font-family: 'Caveat', cursive; font-size: 1rem; outline: none; transition: border-color 0.2s;
+}
+.ap-input:focus, .ap-select:focus, .ap-textarea:focus { border-color: var(--accent); }
+.ap-select { cursor: pointer; }
+.ap-select option { background: #1a0f05; }
+.ap-textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+.ap-color-row { display: flex; align-items: center; gap: 0.5rem; }
+.ap-color-input { width: 38px; height: 34px; padding: 2px; border: 1px solid rgba(107,72,32,0.4); background: rgba(255,255,255,0.06); border-radius: 3px; cursor: pointer; }
+.ap-color-text { flex: 1; }
+.ap-connections { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.25rem; }
+.ap-conn-tag {
+  display: flex; align-items: center; gap: 0.25rem;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(107,72,32,0.35);
+  border-radius: 3px; padding: 0.15rem 0.45rem;
+  font-family: 'Caveat', cursive; font-size: 0.85rem; color: rgba(253,246,227,0.6);
+  cursor: pointer; transition: all 0.15s;
+}
+.ap-conn-tag.selected { background: rgba(230,126,34,0.2); border-color: var(--accent); color: var(--accent); }
+.ap-form-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.ap-save-btn {
+  flex: 1; background: var(--accent); border: none; color: #fff;
+  font-family: 'Caveat', cursive; font-size: 1rem; font-weight: 700;
+  padding: 0.5rem; border-radius: 3px; cursor: pointer; transition: background 0.2s;
+}
+.ap-save-btn:hover { background: #d35400; }
+.ap-cancel-btn {
+  background: none; border: 1px solid rgba(107,72,32,0.4); color: rgba(253,246,227,0.4);
+  font-family: 'Caveat', cursive; font-size: 1rem; padding: 0.5rem 1rem;
+  border-radius: 3px; cursor: pointer; transition: all 0.2s;
+}
+.ap-cancel-btn:hover { border-color: rgba(253,246,227,0.3); color: rgba(253,246,227,0.6); }
+
+/* Profile tab */
+.ap-profile-form { display: flex; flex-direction: column; gap: 0.7rem; }
+.ap-title-words { display: flex; flex-direction: column; gap: 0.4rem; }
+.ap-title-word-row { display: flex; align-items: center; gap: 0.5rem; }
+.ap-word-hl { display: flex; align-items: center; gap: 0.3rem; font-family: 'Caveat', cursive; font-size: 0.9rem; color: rgba(253,246,227,0.5); white-space: nowrap; }
+.ap-word-hl input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
+.ap-word-del { background: none; border: none; color: rgba(192,57,43,0.6); font-size: 1rem; cursor: pointer; padding: 0 0.2rem; }
+.ap-word-del:hover { color: #e74c3c; }
+.ap-add-word { background: none; border: 1px dashed rgba(107,72,32,0.5); color: rgba(230,126,34,0.5); font-family: 'Caveat', cursive; font-size: 0.9rem; padding: 0.3rem 0.7rem; border-radius: 3px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 0.2rem; }
+.ap-add-word:hover { border-color: var(--accent); color: var(--accent); }
+.ap-save-profile { background: var(--accent); border: none; color: #fff; font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700; padding: 0.6rem; border-radius: 3px; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 0.5rem; }
+.ap-save-profile:hover { background: #d35400; }
+
+/* Security tab */
+.ap-security-form { display: flex; flex-direction: column; gap: 0.7rem; }
+.ap-security-note { font-family: 'Caveat', cursive; font-size: 0.95rem; color: rgba(253,246,227,0.35); line-height: 1.5; margin-bottom: 0.5rem; }
+
+/* Confirm dialog */
+.ap-confirm {
+  position: fixed; inset: 0; z-index: 9600;
+  background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.ap-confirm.open { opacity: 1; pointer-events: all; }
+.ap-confirm-box {
+  background: #1a0f05; border: 1px solid rgba(107,72,32,0.6);
+  border-radius: 4px; padding: 1.8rem 2rem; width: 320px; max-width: calc(100vw - 2rem);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5); text-align: center;
+}
+.ap-confirm-msg { font-family: 'Caveat', cursive; font-size: 1.1rem; color: rgba(253,246,227,0.8); margin-bottom: 1.5rem; line-height: 1.5; }
+.ap-confirm-btns { display: flex; gap: 0.6rem; justify-content: center; }
+.ap-confirm-yes { background: #c0392b; border: none; color: #fff; font-family: 'Caveat', cursive; font-size: 1rem; font-weight: 700; padding: 0.5rem 1.5rem; border-radius: 3px; cursor: pointer; }
+.ap-confirm-no { background: none; border: 1px solid rgba(107,72,32,0.5); color: rgba(253,246,227,0.5); font-family: 'Caveat', cursive; font-size: 1rem; padding: 0.5rem 1.5rem; border-radius: 3px; cursor: pointer; }
+
+/* Toast */
+.ap-toast {
+  position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: rgba(20,10,0,0.95); border: 1px solid rgba(107,72,32,0.5);
+  color: rgba(253,246,227,0.9); font-family: 'Caveat', cursive; font-size: 1rem;
+  padding: 0.6rem 1.4rem; border-radius: 4px; z-index: 9700;
+  opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap;
+}
+.ap-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ═══════════════════ НОВЫЙ ТРЕТИЙ ЭКРАН — ДЭШБОРД ═══════════════════ */
+.stats-footer-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--bg);
+  padding: 2rem 1rem 0;
+}
+
+.dashboard-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.dashboard-card {
+  background: var(--paper);
+  padding: 1.5rem 1rem;
+  border-radius: 8px;
+  box-shadow: 3px 4px 12px var(--shadow), 1px 2px 0 rgba(255, 255, 255, 0.15) inset;
+  filter: url(#paper-warp);
+  transform: rotate(var(--r, 0deg));
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.dashboard-card:hover {
+  transform: scale(1.02) rotate(0deg);
+  box-shadow: 6px 8px 24px rgba(0,0,0,0.6);
+  z-index: 10;
+}
+
+.dashboard-icon {
+  font-size: 2.4rem;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.2));
+}
+
+.dashboard-value {
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  color: var(--accent);
+  line-height: 1.2;
+  text-shadow: 1px 2px 0 rgba(0,0,0,0.2);
+}
+
+.dashboard-label {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink-faded);
+  border-top: 1px dashed rgba(30,18,10,0.15);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+</style>
+</head>
+<body>
+
+<svg class="svg-defs" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="paper-warp" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035 0.045" numOctaves="3" seed="5" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- ══════ HERO ══════ -->
+<div class="snap-container">
+<header class="hero snap-section" id="hero">
+  <svg class="hero-deco" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g opacity="0.08" stroke="#e67e22" fill="none" stroke-linecap="round">
+      <path d="M40 40 Q60 20 80 40 Q100 60 80 80" stroke-width="1.5"/>
+      <circle cx="55" cy="55" r="20" stroke-width="1" stroke-dasharray="3 4"/>
+      <path d="M1320 40 Q1350 30 1360 60 Q1370 90 1340 85" stroke-width="1.5"/>
+      <path d="M200 100 Q400 80 600 120 Q800 160 1000 100" stroke-width="1" stroke-dasharray="5 6" opacity="0.5"/>
+    </g>
+    <g fill="rgba(150,100,50,0.15)">
+      <circle cx="150" cy="200" r="3"/><circle cx="300" cy="120" r="2"/><circle cx="1100" cy="180" r="3"/>
+      <circle cx="1250" cy="300" r="2"/><circle cx="200" cy="700" r="3"/>
+    </g>
+  </svg>
+  <div class="hero-content">
+    <p class="hero-eyebrow">🔎 Case File: Homelab Infrastructure</p>
+    <h1 class="hero-title" id="hero-title"></h1>
+    <p class="hero-sub" id="hero-sub"></p>
+    <div class="hero-links" id="hero-links"></div>
+  </div>
+  <div class="scroll-down"><span>explore the board</span><span class="scroll-arr">↓</span></div>
+</header>
+
+<!-- ══════ BOARD BAR ══════ -->
+<div class="board-section snap-section">
+<div class="board-bar">
+  <div class="board-bar-title">📌 Evidence Board</div>
+  <div class="legend" id="legend"></div>
+  <!-- <div class="board-bar-hint">← drag to explore →</div> -->
+</div>
+
+<!-- ══════ CORK BOARD ══════ -->
+    <div class="board-container" id="board-container">
+      <div class="board" id="board">
+        <svg id="conn-svg"></svg>
+      </div>
+      <div class="zoom-badge">🖱️ drag · scroll to zoom</div>
+    </div>
+  </div>
+
+<!-- ══════ FOOTER ══════ -->
+<div class="stats-footer-section snap-section">
+  <div class="dashboard-container">
+    <div class="dashboard-grid" id="dashboard-grid"></div>
+  </div>
+  <footer id="footer"></footer>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     ADMIN SYSTEM HTML
+══════════════════════════════════════════════ -->
+
+<!-- Gear trigger -->
+<button id="admin-trigger" title="Admin Panel (Ctrl+Shift+A)"></button>
+
+<!-- Login modal -->
+<div id="login-modal">
+  <div class="login-box">
+    <div class="login-close-row"><button class="login-x" id="login-close-btn">✕</button></div>
+    <div class="login-title">🔐 Admin Access</div>
+    <div class="login-sub">Enter your admin password</div>
+    <input class="login-input" type="password" id="login-pw" placeholder="Password..." autocomplete="current-password">
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" id="login-submit-btn">Unlock Panel</button>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div id="admin-panel">
+  <div class="ap-header">
+    <span class="ap-title">⚙️ Admin Panel</span>
+    <button class="ap-close" id="ap-close-btn">✕</button>
+  </div>
+  <div class="ap-tabs" id="ap-tabs">
+    <button class="ap-tab active" data-tab="profile">🪪 Profile</button>
+    <button class="ap-tab" data-tab="nodes">📌 Services</button>
+    <button class="ap-tab" data-tab="skills">🗒 Skills</button>
+    <button class="ap-tab" data-tab="annotations">✏️ Notes</button>
+    <button class="ap-tab" data-tab="stats">📊 Stats</button>
+    <button class="ap-tab" data-tab="security">🔒 Security</button>
+  </div>
+  <div class="ap-body" id="ap-body"></div>
+  <div class="ap-footer">
+    <button class="ap-apply" id="ap-apply-btn">✓ Apply &amp; Rebuild</button>
+    <button class="ap-secondary" id="ap-export-btn">↓ Export JSON</button>
+	<button class="ap-secondary" id="ap-import-btn">↑ Import JSON</button>  <!-- новая кнопка -->
+	<button class="ap-secondary" id="ap-copy-default-btn">📋 Copy as DEFAULT_CONFIG</button>  <!-- новая кнопка -->
+    <button class="ap-secondary" id="ap-reset-btn">↺ Reset defaults</button>
+  </div>
+</div>
+
+<!-- Confirm dialog -->
+<div class="ap-confirm" id="ap-confirm">
+  <div class="ap-confirm-box">
+    <div class="ap-confirm-msg" id="ap-confirm-msg">Are you sure?</div>
+    <div class="ap-confirm-btns">
+      <button class="ap-confirm-yes" id="ap-confirm-yes">Yes, delete</button>
+      <button class="ap-confirm-no" id="ap-confirm-no">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="ap-toast" id="ap-toast"></div>
+<!-- Скрытый input для импорта JSON -->
+<input type="file" id="import-file-input" accept="application/json" style="display: none;">
+
+<!-- ══════════════════════════════════════════════
+     CONFIGURATION — edit this to set defaults
+══════════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════════════
+   DEFAULT CONFIG — overridden by localStorage on load
+═══════════════════════════════════════════════════ */
+const DEFAULT_CONFIG = {
+  "profile": {
+    "name": "Daniil Hvozdz",
+    "role": "Homelab Enthusiast",
+    "tagline": "Building my own internet, one container at a time. Self-hosted · Open Source · Always learning.",
+    "github": "https://github.com/flytrapq",
+    "linkedin": "https://linkedin.com/in/daniilh"
+  },
+  "titleWords": [
+    {
+      "text": "MY",
+      "highlight": false
+    },
+    {
+      "text": "HOMELAB",
+      "highlight": false
+    }
+  ],
+  "titleColors": {
+    "normal": "#e8ffd1",
+    "highlight": "#d8000e"
+  },
+  "stats": [
+    {
+      "number": "15+",
+      "label": "Running Containers"
+    },
+    {
+      "number": "99.9%",
+      "label": "Uptime"
+    },
+    {
+      "number": "3",
+      "label": "Public Services"
+    },
+    {
+      "number": "512GB",
+      "label": "Storage"
+    },
+    {
+      "number": "24/7",
+      "label": "Self-hosted"
+    }
+  ],
+  "boardWidth": 3200,
+  "boardHeight": 1900,
+  "nodes": [
+    {
+      "id": "server",
+      "label": "Home Server",
+      "type": "server",
+      "icon": "🖥️",
+      "description": "The (tiny) beast that runs it all",
+      "specs": [
+        "Intel i5-7400T",
+        "8 GB DDR4",
+        "256 GB NVMe SSD",
+        "1 Gbit uplink"
+      ],
+      "x": 1300,
+      "y": 300,
+      "url": null,
+      "pinColor": "#2c3e50",
+      "connections": [
+        "vpn",
+        "nginx"
+      ]
+    },
+    {
+      "id": "docker",
+      "label": "Docker",
+      "type": "infrastructure",
+      "icon": "🐳",
+      "description": "Container orchestration",
+      "specs": [
+        "15+ containers",
+        "Docker Compose",
+        "Watchtower"
+      ],
+      "x": 1600,
+      "y": 700,
+      "url": null,
+      "pinColor": "#2980b9",
+      "connections": [
+        "server",
+        "vpn",
+        "nginx",
+        "grafana",
+        "prometheus",
+        "homarr",
+        "telegram",
+        "ollana_server_2",
+        "caloriemate"
+      ]
+    },
+    {
+      "id": "vpn",
+      "label": "WireGuard VPN",
+      "type": "network",
+      "icon": "🔒",
+      "description": "Encrypted remote access",
+      "specs": [
+        "WireGuard protocol",
+        "Split-tunnel",
+        "Kill-switch"
+      ],
+      "x": 900,
+      "y": 500,
+      "url": null,
+      "pinColor": "#8e44ad",
+      "connections": [
+        "docker"
+      ]
+    },
+    {
+      "id": "nginx",
+      "label": "Nginx Proxy Mgr",
+      "type": "network",
+      "icon": "🌐",
+      "description": "Reverse proxy + SSL certs",
+      "specs": [
+        "Let's Encrypt",
+        "5 public domains",
+        "Access lists"
+      ],
+      "x": 980,
+      "y": 900,
+      "url": null,
+      "pinColor": "#27ae60",
+      "connections": [
+        "homarr",
+        "caloriemate",
+        "ezbookkeeping"
+      ]
+    },
+    {
+      "id": "grafana",
+      "label": "Grafana",
+      "type": "monitoring",
+      "icon": "📊",
+      "description": "Dashboards & visualization",
+      "specs": [
+        "12 dashboards",
+        "Alerting rules"
+      ],
+      "x": 2400,
+      "y": 530,
+      "url": null,
+      "pinColor": "#e74c3c",
+      "connections": [
+        "prometheus"
+      ]
+    },
+    {
+      "id": "prometheus",
+      "label": "Prometheus",
+      "type": "monitoring",
+      "icon": "🔥",
+      "description": "Metrics scraping & alerting",
+      "specs": [
+        "30+ exporters",
+        "Node Exporter",
+        "cAdvisor"
+      ],
+      "x": 2200,
+      "y": 760,
+      "url": null,
+      "pinColor": "#c0392b",
+      "connections": []
+    },
+    {
+      "id": "homarr",
+      "label": "Homarr",
+      "type": "monitoring",
+      "icon": "🏠",
+      "description": "Homelab start dashboard",
+      "specs": [
+        "All services in one",
+        "Public access"
+      ],
+      "x": 2380,
+      "y": 1020,
+      "url": null,
+      "pinColor": "#16a085",
+      "connections": []
+    },
+    {
+      "id": "telegram",
+      "label": "Telegram Bot",
+      "type": "bot",
+      "icon": "🤖",
+      "description": "Custom automation bot",
+      "specs": [
+        "Python + aiogram",
+        "Webhook mode",
+        "Notifies on alerts"
+      ],
+      "x": 1050,
+      "y": 1400,
+      "url": null,
+      "pinColor": "#2196F3",
+      "connections": []
+    },
+    {
+      "id": "Scrapper_bot",
+      "label": "Web Scrapper",
+      "type": "service",
+      "icon": "📦",
+      "description": "Aruodas.lt web scrapper",
+      "specs": [
+        "Scrapes ads",
+        "Python + Selenium"
+      ],
+      "x": 1400,
+      "y": 1400,
+      "url": null,
+      "pinColor": "#27ae60",
+      "connections": [
+        "telegram"
+      ]
+    },
+    {
+      "id": "ai_server",
+      "label": "Home Server 2",
+      "type": "server",
+      "icon": "🖥️",
+      "description": "The second (tiny) beast for local AI models",
+      "specs": [
+        "Interl i5-6400T",
+        "16GB DDR4",
+        "256 GB NVMe SSD",
+        "1 Gbit uplink"
+      ],
+      "x": 2000,
+      "y": 200,
+      "url": null,
+      "pinColor": "#27ae60",
+      "connections": [
+        "server"
+      ]
+    },
+    {
+      "id": "ollana_server_2",
+      "label": "Ollama",
+      "type": "service",
+      "icon": "🤖",
+      "description": "Local AI models",
+      "specs": [
+        "gemma2:9b",
+        "moondream2",
+        "llava-phi3"
+      ],
+      "x": 2350,
+      "y": 100,
+      "url": null,
+      "pinColor": "#ab76ab",
+      "connections": [
+        "ai_server",
+        "ezbookkeeping"
+      ]
+    },
+    {
+      "id": "caloriemate",
+      "label": "CalorieMate",
+      "type": "service",
+      "icon": "🍕",
+      "description": "Calorie tracker",
+      "specs": [
+        "AI calorie analysis",
+        "Nutrition calculation",
+        "Publicly accessible"
+      ],
+      "x": 1800,
+      "y": 1200,
+      "url": null,
+      "pinColor": "#5680ab",
+      "connections": [
+        "ollana_server_2"
+      ]
+    },
+    {
+      "id": "ezbookkeeping",
+      "label": "ezBookkeeping",
+      "type": "service",
+      "icon": "💶",
+      "description": "Money tracker",
+      "specs": [
+        "Open-source",
+        "Lightweight",
+        "Support AI integrations"
+      ],
+      "x": 700,
+      "y": 1050,
+      "url": null,
+      "pinColor": "#a5ab2e",
+      "connections": []
+    }
+  ],
+  "skills": [
+    {
+      "label": "Linux",
+      "icon": "🐧",
+      "x": 770,
+      "y": 280,
+      "color": "#fff9c4"
+    },
+    {
+      "label": "Docker",
+      "icon": "🐳",
+      "x": 1000,
+      "y": 280,
+      "color": "#e3f2fd"
+    },
+    {
+      "label": "Python",
+      "icon": "🐍",
+      "x": 650,
+      "y": 800,
+      "color": "#f3e5f5"
+    },
+    {
+      "label": "Bash",
+      "icon": "💻",
+      "x": 650,
+      "y": 450,
+      "color": "#e8f5e9"
+    },
+    {
+      "label": "YAML",
+      "icon": "📄",
+      "x": 950,
+      "y": 1150,
+      "color": "#fff9c4"
+    },
+    {
+      "label": "Nginx",
+      "icon": "🔀",
+      "x": 880,
+      "y": 700,
+      "color": "#e8f5e9"
+    },
+    {
+      "label": "Git",
+      "icon": "🌿",
+      "x": 2400,
+      "y": 300,
+      "color": "#fff9c4"
+    },
+    {
+      "label": "Ansible",
+      "icon": "⚡",
+      "x": 2550,
+      "y": 450,
+      "color": "#e8f5e9"
+    },
+    {
+      "label": "WireGuard",
+      "icon": "🔒",
+      "x": 2550,
+      "y": 600,
+      "color": "#e3f2fd"
+    },
+    {
+      "label": "Terraform",
+      "icon": "🏗️",
+      "x": 2350,
+      "y": 730,
+      "color": "#f3e5f5"
+    },
+    {
+      "label": "Cloudflare",
+      "icon": "☁️",
+      "x": 2300,
+      "y": 1200,
+      "color": "#fff3e0"
+    },
+    {
+      "label": "ZFS",
+      "icon": "💾",
+      "x": 680,
+      "y": 1300,
+      "color": "#e8f5e9"
+    },
+    {
+      "label": "Portainer",
+      "icon": "🗂️",
+      "x": 1600,
+      "y": 1430,
+      "color": "#e3f2fd"
+    },
+    {
+      "label": "Let's Encrypt",
+      "icon": "🔏",
+      "x": 730,
+      "y": 1500,
+      "color": "#fff9c4"
+    }
+  ],
+  "annotations": [
+    {
+      "text": "everything runs 24/7 ↓",
+      "x": 985,
+      "y": 1280,
+      "rotation": 0
+    },
+    {
+      "text": "← all traffic goes thru this",
+      "x": 1100,
+      "y": 900,
+      "rotation": 5
+    },
+    {
+      "text": "metrics here →",
+      "x": 2000,
+      "y": 750,
+      "rotation": -4
+    },
+    {
+      "text": "publicly accessible! ↗",
+      "x": 1600,
+      "y": 1300,
+      "rotation": 7
+    },
+    {
+      "text": "automates everything 🤖",
+      "x": 1005,
+      "y": 1530,
+      "rotation": -2
+    },
+    {
+      "text": "open-source all the way",
+      "x": 2306,
+      "y": 1135,
+      "rotation": 2
+    }
+  ],
+  "theme": {
+    "accentColor": "#e67e22",
+    "bgColor": "#100a04",
+    "paperColor": "#fdf6e3",
+    "corkColor": "#6b4820",
+    "headingFont": "'Permanent Marker', cursive",
+    "bodyFont": "'Caveat', cursive"
+  }
+};
+
+/* live config — loaded from localStorage or defaults */
+let CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+
+/* ─── persistence ─── */
+const LS_CONFIG = 'homelab_config';
+const LS_PW_HASH = 'homelab_pw_hash';
+
+function loadSavedConfig() {
+  try {
+    const raw = localStorage.getItem(LS_CONFIG);
+    if (raw) CONFIG = JSON.parse(raw);
+  } catch(e) { CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG)); }
+}
+
+async function loadExternalConfig() {
+  try {
+    const response = await fetch('homelab-config.json');
+    if (!response.ok) return;
+    const external = await response.json();
+    // Сливаем с DEFAULT_CONFIG, чтобы не потерять структуру
+    CONFIG = mergeDeep(JSON.parse(JSON.stringify(DEFAULT_CONFIG)), external);
+    saveConfig();  // записываем в localStorage
+    rebuildAll();
+  } catch (e) {
+    console.log('No external config or error', e);
+  }
+}
+
+function saveConfig() {
+  try { localStorage.setItem(LS_CONFIG, JSON.stringify(CONFIG)); } catch(e) {}
+}
+function applyTheme() {
+  const th = CONFIG.theme || DEFAULT_CONFIG.theme;
+  document.documentElement.style.setProperty('--accent', th.accentColor);
+  document.documentElement.style.setProperty('--bg', th.bgColor);
+  document.documentElement.style.setProperty('--paper', th.paperColor);
+  document.documentElement.style.setProperty('--cork', th.corkColor);
+  document.documentElement.style.setProperty('--font-heading', th.headingFont);
+  document.documentElement.style.setProperty('--font-body', th.bodyFont);
+  document.documentElement.style.setProperty('--title-color', CONFIG.titleColors?.normal || '#fdf6e3');
+  document.documentElement.style.setProperty('--title-highlight', CONFIG.titleColors?.highlight || '#e67e22');
+}
+/* ─── type visual config ─── */
+const TYPE_CFG = {
+  server:         { label:"Server",   color:"#c2853a", text:"#fff", string:"#8b1a1a" },
+  infrastructure: { label:"Infra",    color:"#2471a3", text:"#fff", string:"#e67e22" },
+  service:        { label:"Service",  color:"#1e8449", text:"#fff", string:"#27ae60" },
+  monitoring:     { label:"Monitor",  color:"#cb4335", text:"#fff", string:"#c0392b" },
+  network:        { label:"Network",  color:"#6c3483", text:"#fff", string:"#9b59b6" },
+  bot:            { label:"Bot",      color:"#1a5276", text:"#fff", string:"#2980b9" },
+  database:       { label:"Database", color:"#1e5631", text:"#fff", string:"#27ae60" },
+};
+
+/* ════════════════════════════════════════════
+   BOARD RENDERING FUNCTIONS
+════════════════════════════════════════════ */
+const CARD_W = 175, CARD_W_SERVER = 210, CARD_H_EST = 180;
+
+function buildHero() {
+  const titleEl = document.getElementById('hero-title');
+  titleEl.innerHTML = '';
+  const rotations = [-2,-1,0,1,2,-1.5,1.5,-0.5,0.5,2,-2,1];
+  let charIdx = 0;
+  CONFIG.titleWords.forEach(word => {
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'title-word' + (word.highlight ? ' highlight' : '');
+    word.text.split('').forEach(ch => {
+      const s = document.createElement('span');
+      s.className = 'title-char';
+      s.textContent = ch === ' ' ? '\u00a0' : ch;
+      const r = rotations[charIdx % rotations.length];
+      s.style.setProperty('--r', r + 'deg');
+      const delay = 0.6 + charIdx * 0.07;
+	  s.style.setProperty('--d', delay + 's'); 
+      /* s.style.setProperty('--wd', (delay + 0.5) + 's'); */
+      s.addEventListener('animationend', () => s.classList.add('done'), { once: true });
+      wordSpan.appendChild(s);
+      charIdx++;
+    });
+    titleEl.appendChild(wordSpan);
+  });
+  const subEl = document.getElementById('hero-sub');
+  subEl.textContent = CONFIG.profile.tagline;
+  subEl.style.animationDelay = Math.max(1.8, 0.6 + charIdx * 0.07) + 's';
+  const linksEl = document.getElementById('hero-links');
+  linksEl.innerHTML = '';
+  if (CONFIG.profile.github)   linksEl.innerHTML += `<a class="hero-btn secondary" href="${CONFIG.profile.github}" target="_blank">⌂ GitHub</a>`;
+  if (CONFIG.profile.linkedin) linksEl.innerHTML += `<a class="hero-btn primary" href="${CONFIG.profile.linkedin}" target="_blank">LinkedIn</a>`;
+}
+
+function buildStats() {
+  const strip = document.getElementById('stats-strip');
+  strip.innerHTML = '';
+  CONFIG.stats.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'stat-item';
+    div.style.transitionDelay = (i * 0.12) + 's';
+    div.innerHTML = `<span class="stat-num">${s.number}</span><span class="stat-lbl">${s.label}</span>`;
+    strip.appendChild(div);
+  });
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.2 });
+  strip.querySelectorAll('.stat-item').forEach(el => obs.observe(el));
+}
+
+function updateCaseNotes() {
+  document.getElementById('total-services').textContent = CONFIG.nodes.length;
+  document.getElementById('total-skills').textContent = CONFIG.skills.length;
+  document.getElementById('total-annotations').textContent = CONFIG.annotations.length;
+}
+
+function buildFooter() {
+  document.getElementById('footer').innerHTML =
+    `<p>${CONFIG.profile.name} — ${CONFIG.profile.role}</p>
+     <p style="margin-top:0.5rem">Built with Claude, ☕ &amp; too many late nights ·
+     <a href="${CONFIG.profile.github}" target="_blank">GitHub</a> ·
+     <a href="${CONFIG.profile.linkedin}" target="_blank">LinkedIn</a></p>`;
+}
+
+function buildLegend() {
+  const leg = document.getElementById('legend');
+  leg.innerHTML = '';
+  const types = [...new Set(CONFIG.nodes.map(n => n.type))];
+  types.forEach(t => {
+    const cfg = TYPE_CFG[t] || { label: t, color: '#888' };
+    const div = document.createElement('div');
+    div.className = 'legend-item';
+    div.innerHTML = `<span class="legend-dot" style="background:${cfg.color};color:${cfg.color}"></span>${cfg.label}`;
+    leg.appendChild(div);
+  });
+}
+
+function buildBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '<svg id="conn-svg"></svg>';
+  board.style.width  = CONFIG.boardWidth  + 'px';
+  board.style.height = CONFIG.boardHeight + 'px';
+  const svg = document.getElementById('conn-svg');
+  svg.setAttribute('width',  CONFIG.boardWidth);
+  svg.setAttribute('height', CONFIG.boardHeight);
+  svg.setAttribute('viewBox', `0 0 ${CONFIG.boardWidth} ${CONFIG.boardHeight}`);
+  svg.innerHTML = `<defs>
+    <filter id="sf" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06 0.015" numOctaves="2" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter></defs>`;
+
+  const nodeMap = {};
+  CONFIG.nodes.forEach(n => nodeMap[n.id] = n);
+  const drawnPairs = new Set();
+  CONFIG.nodes.forEach(node => {
+    (node.connections || []).forEach(targetId => {
+      const key = [node.id, targetId].sort().join('|');
+      if (drawnPairs.has(key)) return;
+      drawnPairs.add(key);
+      const target = nodeMap[targetId];
+      if (target) drawString(svg, node, target);
+    });
+  });
+
+  CONFIG.annotations.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'annotation';
+    div.style.left = a.x + 'px';
+    div.style.top  = a.y + 'px';
+    div.style.setProperty('--r', (a.rotation || 0) + 'deg');
+    div.textContent = a.text;
+    board.appendChild(div);
+  });
+
+  const noteRots = [-8,-5,-3,-1,0,2,4,6,8,-6,-4,-2,1,3,5,7];
+  CONFIG.skills.forEach((sk, i) => {
+    const div = document.createElement('div');
+    div.className = 'skill-note';
+    const rot = noteRots[i % noteRots.length];
+    div.style.left = sk.x + 'px';
+    div.style.top  = sk.y + 'px';
+    div.style.background = sk.color || '#fff9c4';
+    div.style.setProperty('--rot', `rotate(${rot}deg)`);
+    div.style.setProperty('--tape-r', (rot * 0.5 + (Math.random()*4-2)) + 'deg');
+    div.innerHTML = `<span class="skill-icon">${sk.icon||''}</span><span class="skill-text">${sk.label}</span>`;
+    div.style.animation = `noteAppear 0.6s cubic-bezier(0.34,1.56,0.64,1) ${1.2 + i * 0.08}s forwards`;
+    div.style.transform = `rotate(${rot}deg)`;
+    board.appendChild(div);
+  });
+
+  const cardRots = [-3,-2,-1,0,1,2,3,-2.5,2.5,-1.5,1.5,-0.5,0.5];
+  CONFIG.nodes.forEach((node, i) => renderCard(board, node, i, cardRots));
+}
+
+// Построение дашборда на третьем экране
+function buildDashboard() {
+  const grid = document.getElementById('dashboard-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  // Карточки из статистики (CONFIG.stats)
+  CONFIG.stats.forEach((stat, index) => {
+    const card = document.createElement('div');
+    card.className = 'dashboard-card';
+    const rot = (index % 2 === 0 ? -1 : 1) * (Math.random() * 2 + 0.5);
+    card.style.setProperty('--r', rot + 'deg');
+    card.innerHTML = `
+      <span class="dashboard-icon">${getIconForStat(stat.label)}</span>
+      <span class="dashboard-value">${stat.number}</span>
+      <span class="dashboard-label">${stat.label}</span>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Дополнительные карточки: количество сервисов, навыков, заметок
+  const extra = [
+    { icon: '🖥️', label: 'Services', value: CONFIG.nodes.length },
+    { icon: '📌', label: 'Skills', value: CONFIG.skills.length },
+    { icon: '✏️', label: 'Notes', value: CONFIG.annotations.length },
+  ];
+  extra.forEach((item, index) => {
+    const card = document.createElement('div');
+    card.className = 'dashboard-card';
+    const rot = (index % 2 === 0 ? -1.5 : 1.5) + (Math.random() * 2 - 1);
+    card.style.setProperty('--r', rot + 'deg');
+    card.innerHTML = `
+      <span class="dashboard-icon">${item.icon}</span>
+      <span class="dashboard-value">${item.value}</span>
+      <span class="dashboard-label">${item.label}</span>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// Вспомогательная функция для иконок статистики
+function getIconForStat(label) {
+  const map = {
+    'Running Containers': '🐳',
+    'Uptime': '⏱️',
+    'Public Services': '🌐',
+    'Storage': '💾',
+    'Self-hosted': '🏠',
+  };
+  return map[label] || '📊';
+}
+
+function drawString(svg, fromNode, toNode) {
+  const tcfg = TYPE_CFG[fromNode.type] || { string: '#c0392b' };
+  const color = tcfg.string;
+  const x1=fromNode.x, y1=fromNode.y, x2=toNode.x, y2=toNode.y;
+  const mx=(x1+x2)/2, my=(y1+y2)/2;
+  const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+  if (len < 1) return;
+  const sag = Math.min(60, len * 0.18);
+  const cx = mx - dy/len*sag*0.3;
+  const cy = my + dx/len*sag*0.3 + sag*0.8;
+  const pathD = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+  const approxLen = len * 1.1;
+
+  const shadow = document.createElementNS('http://www.w3.org/2000/svg','path');
+  shadow.setAttribute('d', pathD);
+  shadow.setAttribute('stroke','rgba(0,0,0,0.25)');
+  shadow.setAttribute('stroke-width','3');
+  shadow.setAttribute('fill','none');
+  shadow.setAttribute('stroke-linecap','round');
+  shadow.setAttribute('transform','translate(2,3)');
+  svg.appendChild(shadow);
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', pathD);
+  path.setAttribute('stroke', color);
+  path.setAttribute('stroke-width','2.2');
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke-linecap','round');
+  path.setAttribute('filter','url(#sf)');
+  path.setAttribute('opacity','0.85');
+  path.style.strokeDasharray  = approxLen;
+  path.style.strokeDashoffset = approxLen;
+  path.style.animation = `drawStr 1.2s ease ${0.5 + Math.random()*0.8}s forwards`;
+  svg.appendChild(path);
+
+  const midT=0.5;
+  const dotX=(1-midT)**2*x1+2*(1-midT)*midT*cx+midT**2*x2;
+  const dotY=(1-midT)**2*y1+2*(1-midT)*midT*cy+midT**2*y2;
+  const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('cx', dotX); dot.setAttribute('cy', dotY);
+  dot.setAttribute('r','4'); dot.setAttribute('fill', color); dot.setAttribute('opacity','0.5');
+  dot.style.animation = `pulseDot 2.5s ease-in-out ${1+Math.random()}s infinite`;
+  svg.appendChild(dot);
+}
+
+function renderCard(board, node, idx, cardRots) {
+  const tcfg = TYPE_CFG[node.type] || { label: node.type, color:'#888', text:'#fff' };
+  const w = node.type === 'server' ? CARD_W_SERVER : CARD_W;
+  const rot = cardRots[idx % cardRots.length] + (Math.random()*2-1);
+  const card = document.createElement('div');
+  card.className = 'card'; card.dataset.type = node.type;
+  card.style.width = w + 'px';
+  card.style.left  = (node.x - w/2) + 'px';
+  card.style.top   = (node.y - CARD_H_EST/2) + 'px';
+  const rotStr = `rotate(${rot}deg)`;
+  card.style.setProperty('--rot', rotStr);
+  card.style.transform = rotStr;
+  card.style.animation = `pinDrop 0.7s cubic-bezier(0.34,1.56,0.64,1) ${0.3+idx*0.13}s forwards`;
+  card.addEventListener('mouseenter', () => { card.style.transform = `${rotStr} scale(1.06) translateY(-4px)`; });
+  card.addEventListener('mouseleave', () => { card.style.transform = rotStr; });
+
+  if (idx % 3 === 0) {
+    const tape = document.createElement('div');
+    tape.className = 'tape-h';
+    tape.style.setProperty('--tape-r', (Math.random()*8-4)+'deg');
+    card.appendChild(tape);
+  } else {
+    const pin = document.createElement('div');
+    pin.className = 'pin';
+    pin.style.background = `radial-gradient(circle at 38% 38%, ${lighten(node.pinColor)}, ${node.pinColor})`;
+    card.appendChild(pin);
+  }
+
+  const badge = document.createElement('span');
+  badge.className = 'card-type-badge';
+  badge.textContent = tcfg.label;
+  badge.style.background = tcfg.color; badge.style.color = tcfg.text;
+  card.appendChild(badge);
+
+  const iconEl = document.createElement('span');
+  iconEl.className = 'card-icon'; iconEl.textContent = node.icon || '📦';
+  card.appendChild(iconEl);
+
+  const labelEl = document.createElement('div');
+  labelEl.className = 'card-label'; labelEl.textContent = node.label;
+  card.appendChild(labelEl);
+
+  if (node.description) {
+    const desc = document.createElement('div');
+    desc.className = 'card-desc'; desc.textContent = node.description;
+    card.appendChild(desc);
+  }
+
+  if (node.specs && node.specs.length) {
+    const ul = document.createElement('ul');
+    ul.className = 'card-specs';
+    node.specs.forEach(s => {
+      const li = document.createElement('li'); li.textContent = s; ul.appendChild(li);
+    });
+    card.appendChild(ul);
+  }
+
+  if (node.url) {
+    const a = document.createElement('a');
+    a.className = 'card-link'; a.href = node.url; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = '↗ open service'; card.appendChild(a);
+  }
+
+  board.appendChild(card);
+}
+
+function lighten(hex) {
+  try {
+    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16), f=1.45;
+    return `rgb(${Math.min(255,r*f|0)},${Math.min(255,g*f|0)},${Math.min(255,b*f|0)})`;
+  } catch { return hex; }
+}
+
+/* ════════════════════════════════════════════
+   PAN & ZOOM
+════════════════════════════════════════════ */
+let panZoomState = { panX:0, panY:0, scale:1 };
+
+function setupPanZoom() {
+  const container = document.getElementById('board-container');
+  const board = document.getElementById('board');
+  let { panX, panY, scale } = panZoomState;
+  const MIN_SCALE=0.3, MAX_SCALE=2;
+  const cw=container.clientWidth, ch=container.clientHeight;
+  panX = (cw - CONFIG.boardWidth)/2;
+  panY = (ch - CONFIG.boardHeight)/2;
+  panZoomState = { panX, panY, scale:1 };
+
+  function applyTransform() {
+    board.style.transform = `translate(${panZoomState.panX}px,${panZoomState.panY}px) scale(${panZoomState.scale})`;
+    board.style.transformOrigin = '0 0';
+  }
+  applyTransform();
+
+  let dragging=false, lastX=0, lastY=0;
+  container.addEventListener('mousedown', e => {
+    if (e.target.tagName === 'A') return;
+    dragging=true; lastX=e.clientX; lastY=e.clientY; e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    panZoomState.panX += e.clientX-lastX; panZoomState.panY += e.clientY-lastY;
+    lastX=e.clientX; lastY=e.clientY; applyTransform();
+  });
+  window.addEventListener('mouseup', () => { dragging=false; });
+
+  container.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect=container.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    const delta=e.deltaY>0?0.9:1.1;
+    const newScale=Math.min(MAX_SCALE,Math.max(MIN_SCALE,panZoomState.scale*delta));
+    panZoomState.panX = mx - (mx-panZoomState.panX)*(newScale/panZoomState.scale);
+    panZoomState.panY = my - (my-panZoomState.panY)*(newScale/panZoomState.scale);
+    panZoomState.scale = newScale; applyTransform();
+  }, { passive:false });
+}
+
+/* ════════════════════════════════════════════
+   REBUILD — called after admin saves
+════════════════════════════════════════════ */
+function rebuildAll() {
+  buildHero(); buildDashboard(); buildFooter(); buildLegend(); buildBoard();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN SYSTEM
+═══════════════════════════════════════════════════════════════ */
+
+/* ── password hashing (simple, personal tool) ── */
+function hashStr(str) {
+  let h=0;
+  for (let i=0;i<str.length;i++) { h=((h<<5)-h)+str.charCodeAt(i); h=h&h; }
+  return h.toString(16);
+}
+
+const DEFAULT_PW_HASH = hashStr('homelab');
+let adminAuthed = false;
+let currentTab = 'profile';
+let confirmCallback = null;
+
+function getStoredHash() {
+  return localStorage.getItem(LS_PW_HASH) || DEFAULT_PW_HASH;
+}
+
+/* ── toast ── */
+function showToast(msg, duration=2200) {
+  const t = document.getElementById('ap-toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+/* ── confirm dialog ── */
+function showConfirm(msg, onYes) {
+  confirmCallback = onYes;
+  document.getElementById('ap-confirm-msg').textContent = msg;
+  document.getElementById('ap-confirm').classList.add('open');
+}
+
+/* ── login modal ── */
+function openLoginModal() {
+  const m = document.getElementById('login-modal');
+  const pw = document.getElementById('login-pw');
+  document.getElementById('login-err').textContent = '';
+  pw.value = ''; pw.classList.remove('error');
+  m.classList.add('open');
+  setTimeout(() => pw.focus(), 300);
+}
+
+function closeLoginModal() {
+  document.getElementById('login-modal').classList.remove('open');
+}
+
+function tryLogin() {
+  const pw = document.getElementById('login-pw').value;
+  const errEl = document.getElementById('login-err');
+  if (hashStr(pw) === getStoredHash()) {
+    adminAuthed = true;
+    closeLoginModal();
+    openAdminPanel();
+  } else {
+    errEl.textContent = 'Wrong password';
+    const inp = document.getElementById('login-pw');
+    inp.classList.add('error');
+    setTimeout(() => inp.classList.remove('error'), 500);
+  }
+}
+
+/* ── admin panel ── */
+function openAdminPanel() {
+  document.getElementById('admin-trigger').classList.add('active');
+  document.getElementById('admin-panel').classList.add('open');
+  renderTab(currentTab);
+}
+
+function closeAdminPanel() {
+  document.getElementById('admin-panel').classList.remove('open');
+  document.getElementById('admin-trigger').classList.remove('active');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.ap-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  renderTab(tab);
+}
+
+/* ════════════════ TAB RENDERERS ════════════════ */
+function renderTab(tab) {
+  const body = document.getElementById('ap-body');
+  if (tab === 'profile')     body.innerHTML = renderProfileTab();
+  else if (tab === 'nodes')  body.innerHTML = renderNodesTab();
+  else if (tab === 'skills') body.innerHTML = renderSkillsTab();
+  else if (tab === 'annotations') body.innerHTML = renderAnnotationsTab();
+  else if (tab === 'stats')  body.innerHTML = renderStatsTab();
+  else if (tab === 'theme')  body.innerHTML = renderThemeTab();   // новая строка
+  else if (tab === 'security') body.innerHTML = renderSecurityTab();
+  attachTabEvents(tab);
+}
+
+/* ─── PROFILE ─── */
+function renderProfileTab() {
+  const p = CONFIG.profile;
+  const wordsHtml = CONFIG.titleWords.map((w,i) => `
+    <div class="ap-title-word-row">
+      <input class="ap-input" style="flex:1" data-tw-text="${i}" value="${esc(w.text)}" placeholder="Word">
+      <label class="ap-word-hl"><input type="checkbox" data-tw-hl="${i}" ${w.highlight?'checked':''}> Highlighted</label>
+      <button class="ap-word-del" data-tw-del="${i}">✕</button>
+    </div>`).join('');
+
+  return `<div class="ap-profile-form">
+    <div class="ap-field"><label class="ap-label">Your Name</label><input class="ap-input" id="pf-name" value="${esc(p.name)}"></div>
+    <div class="ap-field"><label class="ap-label">Role / Title</label><input class="ap-input" id="pf-role" value="${esc(p.role)}"></div>
+    <div class="ap-field"><label class="ap-label">Tagline (hero subtitle)</label><textarea class="ap-textarea" id="pf-tagline" rows="3">${esc(p.tagline)}</textarea></div>
+    <div class="ap-field-row">
+      <div><label class="ap-label">GitHub URL</label><input class="ap-input" id="pf-github" value="${esc(p.github||'')}"></div>
+      <div><label class="ap-label">LinkedIn URL</label><input class="ap-input" id="pf-linkedin" value="${esc(p.linkedin||'')}"></div>
+    </div>
+    <div class="ap-field">
+      <label class="ap-label">Hero Title Words</label>
+      <div class="ap-title-words" id="tw-list">${wordsHtml}</div>
+      <button class="ap-add-word" id="tw-add-btn">+ Add Word</button>
+    </div>
+	<div class="ap-field-row">
+		<div><label class="ap-label">Title normal color</label><input class="ap-input" type="color" id="tc-normal" value="${CONFIG.titleColors?.normal || '#fdf6e3'}"></div>
+	<	div><label class="ap-label">Title highlight color</label><input class="ap-input" type="color" id="tc-highlight" value="${CONFIG.titleColors?.highlight || '#e67e22'}"></div>
+	</div>
+    <button class="ap-save-profile" id="pf-save-btn">💾 Save Profile</button>
+  </div>`;
+}
+
+function attachProfileEvents() {
+  document.getElementById('pf-save-btn').addEventListener('click', () => {
+    CONFIG.profile.name     = document.getElementById('pf-name').value.trim();
+    CONFIG.profile.role     = document.getElementById('pf-role').value.trim();
+    CONFIG.profile.tagline  = document.getElementById('pf-tagline').value.trim();
+    CONFIG.profile.github   = document.getElementById('pf-github').value.trim();
+    CONFIG.profile.linkedin = document.getElementById('pf-linkedin').value.trim();
+    // title words
+    const newWords = [];
+    document.querySelectorAll('[data-tw-text]').forEach((inp,i) => {
+      const text = inp.value.trim().toUpperCase();
+      const hlChk = document.querySelector(`[data-tw-hl="${i}"]`);
+      if (text) newWords.push({ text, highlight: hlChk ? hlChk.checked : false });
+    });
+    CONFIG.titleWords = newWords.length ? newWords : [{ text:'HOMELAB', highlight:true }];
+	// после сохранения titleWords добавьте:
+	CONFIG.titleColors = {
+	normal: document.getElementById('tc-normal').value,
+	highlight: document.getElementById('tc-highlight').value
+	};
+	// затем вызовите applyTheme(), чтобы сразу увидеть изменения
+	applyTheme();
+    saveConfig();
+    showToast('✓ Profile saved');
+  });
+
+  document.getElementById('tw-add-btn').addEventListener('click', () => {
+    CONFIG.titleWords.push({ text:'WORD', highlight:false });
+    renderTab('profile');
+  });
+
+  document.querySelectorAll('[data-tw-del]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.twDel);
+      CONFIG.titleWords.splice(i, 1);
+      if (!CONFIG.titleWords.length) CONFIG.titleWords = [{ text:'HOMELAB', highlight:true }];
+      renderTab('profile');
+    });
+  });
+}
+
+/* ─── NODES (Services) ─── */
+function renderNodesTab() {
+  const items = CONFIG.nodes.map((n,i) => {
+    const tcfg = TYPE_CFG[n.type] || { color:'#888' };
+    return `<div class="ap-item" data-node-i="${i}">
+      <div class="ap-item-head">
+        <span class="ap-item-icon">${n.icon||'📦'}</span>
+        <div class="ap-item-info">
+          <div class="ap-item-name">${esc(n.label)}</div>
+          <div class="ap-item-meta"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${tcfg.color};margin-right:4px"></span>${n.type} · (${n.x}, ${n.y})</div>
+        </div>
+        <div class="ap-item-actions">
+          <button class="ap-btn-edit" data-edit-node="${i}">✏️ Edit</button>
+          <button class="ap-btn-del" data-del-node="${i}">🗑</button>
+        </div>
+      </div>
+      <div class="ap-form" id="node-form-${i}">${nodeFormHtml(n, i)}</div>
+    </div>`;
+  }).join('');
+
+  return `<div>
+    <div class="ap-section-head">
+      <span class="ap-section-title">Services / Cards</span>
+      <button class="ap-add-btn" id="add-node-btn">+ Add Service</button>
+    </div>
+    ${items || '<div style="color:rgba(253,246,227,0.25);font-family:Caveat,cursive;padding:1rem;text-align:center">No services yet</div>'}
+  </div>`;
+}
+
+function nodeFormHtml(n, i) {
+  const allIds = CONFIG.nodes.map(x => x.id);
+  const connTags = allIds.filter(id => id !== n.id).map(id => {
+    const sel = (n.connections||[]).includes(id) ? 'selected' : '';
+    return `<span class="ap-conn-tag ${sel}" data-conn-id="${id}">${id}</span>`;
+  }).join('');
+  const typeOptions = Object.keys(TYPE_CFG).map(t =>
+    `<option value="${t}" ${n.type===t?'selected':''}>${TYPE_CFG[t].label}</option>`).join('');
+
+  return `
+    <div class="ap-field-row">
+      <div><label class="ap-label">ID (unique, no spaces)</label><input class="ap-input" id="nf-id-${i}" value="${esc(n.id)}" ${i<0?'':''}></div>
+      <div><label class="ap-label">Icon (emoji)</label><input class="ap-input" id="nf-icon-${i}" value="${esc(n.icon||'')}"></div>
+    </div>
+    <div class="ap-field-row">
+      <div><label class="ap-label">Label</label><input class="ap-input" id="nf-label-${i}" value="${esc(n.label)}"></div>
+      <div><label class="ap-label">Type</label><select class="ap-select" id="nf-type-${i}">${typeOptions}</select></div>
+    </div>
+    <div class="ap-field"><label class="ap-label">Description</label><input class="ap-input" id="nf-desc-${i}" value="${esc(n.description||'')}"></div>
+    <div class="ap-field"><label class="ap-label">Specs (one per line)</label><textarea class="ap-textarea" id="nf-specs-${i}" rows="3">${esc((n.specs||[]).join('\n'))}</textarea></div>
+    <div class="ap-field"><label class="ap-label">URL (optional)</label><input class="ap-input" id="nf-url-${i}" value="${esc(n.url||'')}"></div>
+    <div class="ap-field-row">
+      <div><label class="ap-label">X position</label><input class="ap-input" type="number" id="nf-x-${i}" value="${n.x}"></div>
+      <div><label class="ap-label">Y position</label><input class="ap-input" type="number" id="nf-y-${i}" value="${n.y}"></div>
+      <div><label class="ap-label">Pin color</label><div class="ap-color-row"><input class="ap-color-input" type="color" id="nf-pc-${i}" value="${n.pinColor||'#e67e22'}"><input class="ap-input ap-color-text" id="nf-pct-${i}" value="${n.pinColor||'#e67e22'}"></div></div>
+    </div>
+    <div class="ap-field"><label class="ap-label">Connections (click to toggle)</label><div class="ap-connections" id="nf-conns-${i}">${connTags}</div></div>
+    <div class="ap-form-actions">
+      <button class="ap-save-btn" data-save-node="${i}">💾 Save</button>
+      <button class="ap-cancel-btn" data-cancel-node="${i}">Cancel</button>
+    </div>`;
+}
+
+function attachNodesEvents() {
+  document.querySelectorAll('[data-edit-node]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.editNode);
+      const form = document.getElementById(`node-form-${i}`);
+      form.classList.toggle('open');
+      // sync color input ↔ text
+      const pc = document.getElementById(`nf-pc-${i}`);
+      const pct = document.getElementById(`nf-pct-${i}`);
+      if (pc && pct) {
+        pc.addEventListener('input', () => pct.value = pc.value);
+        pct.addEventListener('input', () => { if (/^#[0-9a-f]{6}$/i.test(pct.value)) pc.value = pct.value; });
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-del-node]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.delNode);
+      showConfirm(`Delete "${CONFIG.nodes[i].label}"?`, () => {
+        CONFIG.nodes.splice(i,1);
+        saveConfig();
+        renderTab('nodes');
+        showToast('🗑 Service deleted');
+      });
+    });
+  });
+
+  document.querySelectorAll('[data-save-node]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.saveNode);
+      const node = CONFIG.nodes[i];
+      node.id          = document.getElementById(`nf-id-${i}`).value.trim().replace(/\s+/g,'_') || node.id;
+      node.icon        = document.getElementById(`nf-icon-${i}`).value.trim();
+      node.label       = document.getElementById(`nf-label-${i}`).value.trim();
+      node.type        = document.getElementById(`nf-type-${i}`).value;
+      node.description = document.getElementById(`nf-desc-${i}`).value.trim();
+      node.specs       = document.getElementById(`nf-specs-${i}`).value.split('\n').map(s=>s.trim()).filter(Boolean);
+      node.url         = document.getElementById(`nf-url-${i}`).value.trim() || null;
+      node.x           = parseInt(document.getElementById(`nf-x-${i}`).value) || node.x;
+      node.y           = parseInt(document.getElementById(`nf-y-${i}`).value) || node.y;
+      node.pinColor    = document.getElementById(`nf-pc-${i}`).value;
+      const connTags   = document.querySelectorAll(`#nf-conns-${i} .ap-conn-tag`);
+      node.connections = [...connTags].filter(t=>t.classList.contains('selected')).map(t=>t.dataset.connId);
+      saveConfig();
+      renderTab('nodes');
+      showToast('✓ Service saved');
+    });
+  });
+
+  document.querySelectorAll('[data-cancel-node]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.cancelNode);
+      document.getElementById(`node-form-${i}`)?.classList.remove('open');
+    });
+  });
+
+  document.querySelectorAll('.ap-conn-tag').forEach(tag => {
+    tag.addEventListener('click', () => tag.classList.toggle('selected'));
+  });
+
+  document.getElementById('add-node-btn')?.addEventListener('click', () => {
+    const newNode = {
+      id: 'new_service_' + Date.now(),
+      label: 'New Service', type: 'service', icon: '📦',
+      description: '', specs: [], x: 1600, y: 960,
+      url: null, pinColor: '#27ae60', connections: [],
+    };
+    CONFIG.nodes.push(newNode);
+    saveConfig();
+    renderTab('nodes');
+    // Auto-open new item form
+    setTimeout(() => {
+      const i = CONFIG.nodes.length - 1;
+      document.getElementById(`node-form-${i}`)?.classList.add('open');
+      document.querySelector(`[data-node-i="${i}"]`)?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }, 50);
+  });
+}
+
+/* ─── SKILLS ─── */
+function renderSkillsTab() {
+  const COLORS = ['#fff9c4','#e3f2fd','#f3e5f5','#e8f5e9','#fff3e0','#fce4ec'];
+  const items = CONFIG.skills.map((sk,i) => {
+    return `<div class="ap-item">
+      <div class="ap-item-head">
+        <span class="ap-item-icon">${sk.icon||'📌'}</span>
+        <div class="ap-item-info">
+          <div class="ap-item-name">${esc(sk.label)}</div>
+          <div class="ap-item-meta">pos: (${sk.x}, ${sk.y})</div>
+        </div>
+        <div class="ap-item-actions">
+          <button class="ap-btn-edit" data-edit-sk="${i}">✏️ Edit</button>
+          <button class="ap-btn-del" data-del-sk="${i}">🗑</button>
+        </div>
+      </div>
+      <div class="ap-form" id="sk-form-${i}">
+        <div class="ap-field-row">
+          <div><label class="ap-label">Icon</label><input class="ap-input" id="sk-icon-${i}" value="${esc(sk.icon||'')}"></div>
+          <div><label class="ap-label">Label</label><input class="ap-input" id="sk-label-${i}" value="${esc(sk.label)}"></div>
+        </div>
+        <div class="ap-field-row3">
+          <div><label class="ap-label">X</label><input class="ap-input" type="number" id="sk-x-${i}" value="${sk.x}"></div>
+          <div><label class="ap-label">Y</label><input class="ap-input" type="number" id="sk-y-${i}" value="${sk.y}"></div>
+          <div><label class="ap-label">Color</label><div class="ap-color-row"><input class="ap-color-input" type="color" id="sk-col-${i}" value="${toHex(sk.color||'#fff9c4')}"></div></div>
+        </div>
+        <div class="ap-form-actions">
+          <button class="ap-save-btn" data-save-sk="${i}">💾 Save</button>
+          <button class="ap-cancel-btn" data-cancel-sk="${i}">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div>
+    <div class="ap-section-head">
+      <span class="ap-section-title">Skill Post-its</span>
+      <button class="ap-add-btn" id="add-sk-btn">+ Add Skill</button>
+    </div>
+    ${items}
+  </div>`;
+}
+
+function attachSkillsEvents() {
+  document.querySelectorAll('[data-edit-sk]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.editSk);
+      document.getElementById(`sk-form-${i}`)?.classList.toggle('open');
+    });
+  });
+  document.querySelectorAll('[data-del-sk]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.delSk);
+      showConfirm(`Delete "${CONFIG.skills[i].label}"?`, () => {
+        CONFIG.skills.splice(i,1); saveConfig(); renderTab('skills'); showToast('🗑 Skill deleted');
+      });
+    });
+  });
+  document.querySelectorAll('[data-save-sk]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.saveSk);
+      CONFIG.skills[i].icon  = document.getElementById(`sk-icon-${i}`).value.trim();
+      CONFIG.skills[i].label = document.getElementById(`sk-label-${i}`).value.trim();
+      CONFIG.skills[i].x     = parseInt(document.getElementById(`sk-x-${i}`).value)||0;
+      CONFIG.skills[i].y     = parseInt(document.getElementById(`sk-y-${i}`).value)||0;
+      CONFIG.skills[i].color = document.getElementById(`sk-col-${i}`).value;
+      saveConfig(); renderTab('skills'); showToast('✓ Skill saved');
+    });
+  });
+  document.querySelectorAll('[data-cancel-sk]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(`sk-form-${parseInt(btn.dataset.cancelSk)}`)?.classList.remove('open');
+    });
+  });
+  document.getElementById('add-sk-btn')?.addEventListener('click', () => {
+    CONFIG.skills.push({ label:'New Skill', icon:'⭐', x:800, y:800, color:'#fff9c4' });
+    saveConfig(); renderTab('skills');
+    setTimeout(() => {
+      const i = CONFIG.skills.length-1;
+      document.getElementById(`sk-form-${i}`)?.classList.add('open');
+      document.querySelector(`[data-save-sk="${i}"]`)?.closest('.ap-item')?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }, 50);
+  });
+}
+
+/* ─── ANNOTATIONS ─── */
+function renderAnnotationsTab() {
+  const items = CONFIG.annotations.map((a,i) => `
+    <div class="ap-item">
+      <div class="ap-item-head">
+        <span class="ap-item-icon">✏️</span>
+        <div class="ap-item-info">
+          <div class="ap-item-name">${esc(a.text)}</div>
+          <div class="ap-item-meta">pos: (${a.x}, ${a.y}) · rotation: ${a.rotation}°</div>
+        </div>
+        <div class="ap-item-actions">
+          <button class="ap-btn-edit" data-edit-an="${i}">✏️ Edit</button>
+          <button class="ap-btn-del" data-del-an="${i}">🗑</button>
+        </div>
+      </div>
+      <div class="ap-form" id="an-form-${i}">
+        <div class="ap-field"><label class="ap-label">Text</label><input class="ap-input" id="an-text-${i}" value="${esc(a.text)}"></div>
+        <div class="ap-field-row3">
+          <div><label class="ap-label">X</label><input class="ap-input" type="number" id="an-x-${i}" value="${a.x}"></div>
+          <div><label class="ap-label">Y</label><input class="ap-input" type="number" id="an-y-${i}" value="${a.y}"></div>
+          <div><label class="ap-label">Rotation °</label><input class="ap-input" type="number" id="an-r-${i}" value="${a.rotation||0}" min="-30" max="30"></div>
+        </div>
+        <div class="ap-form-actions">
+          <button class="ap-save-btn" data-save-an="${i}">💾 Save</button>
+          <button class="ap-cancel-btn" data-cancel-an="${i}">Cancel</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  return `<div>
+    <div class="ap-section-head">
+      <span class="ap-section-title">Board Annotations</span>
+      <button class="ap-add-btn" id="add-an-btn">+ Add Note</button>
+    </div>
+    ${items}
+  </div>`;
+}
+
+function attachAnnotationsEvents() {
+  document.querySelectorAll('[data-edit-an]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); document.getElementById(`an-form-${btn.dataset.editAn}`)?.classList.toggle('open'); });
+  });
+  document.querySelectorAll('[data-del-an]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.delAn);
+      showConfirm('Delete this annotation?', () => { CONFIG.annotations.splice(i,1); saveConfig(); renderTab('annotations'); showToast('🗑 Note deleted'); });
+    });
+  });
+  document.querySelectorAll('[data-save-an]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.saveAn);
+      CONFIG.annotations[i].text     = document.getElementById(`an-text-${i}`).value.trim();
+      CONFIG.annotations[i].x        = parseInt(document.getElementById(`an-x-${i}`).value)||0;
+      CONFIG.annotations[i].y        = parseInt(document.getElementById(`an-y-${i}`).value)||0;
+      CONFIG.annotations[i].rotation = parseFloat(document.getElementById(`an-r-${i}`).value)||0;
+      saveConfig(); renderTab('annotations'); showToast('✓ Note saved');
+    });
+  });
+  document.querySelectorAll('[data-cancel-an]').forEach(btn => {
+    btn.addEventListener('click', () => { document.getElementById(`an-form-${btn.dataset.cancelAn}`)?.classList.remove('open'); });
+  });
+  document.getElementById('add-an-btn')?.addEventListener('click', () => {
+    CONFIG.annotations.push({ text:'New note ✏️', x:1600, y:1000, rotation:0 });
+    saveConfig(); renderTab('annotations');
+    setTimeout(() => {
+      const i = CONFIG.annotations.length-1;
+      document.getElementById(`an-form-${i}`)?.classList.add('open');
+    }, 50);
+  });
+}
+
+/* ─── STATS ─── */
+function renderStatsTab() {
+  const items = CONFIG.stats.map((s,i) => `
+    <div class="ap-item">
+      <div class="ap-item-head">
+        <div class="ap-item-info">
+          <div class="ap-item-name" style="font-size:1.1rem">${esc(s.number)} <span style="color:rgba(253,246,227,0.4);font-size:0.9rem">${esc(s.label)}</span></div>
+        </div>
+        <div class="ap-item-actions">
+          <button class="ap-btn-edit" data-edit-st="${i}">✏️ Edit</button>
+          <button class="ap-btn-del" data-del-st="${i}">🗑</button>
+        </div>
+      </div>
+      <div class="ap-form" id="st-form-${i}">
+        <div class="ap-field-row">
+          <div><label class="ap-label">Number / Value</label><input class="ap-input" id="st-num-${i}" value="${esc(s.number)}"></div>
+          <div><label class="ap-label">Label</label><input class="ap-input" id="st-lbl-${i}" value="${esc(s.label)}"></div>
+        </div>
+        <div class="ap-form-actions">
+          <button class="ap-save-btn" data-save-st="${i}">💾 Save</button>
+          <button class="ap-cancel-btn" data-cancel-st="${i}">Cancel</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  return `<div>
+    <div class="ap-section-head">
+      <span class="ap-section-title">Stats Row</span>
+      <button class="ap-add-btn" id="add-st-btn">+ Add Stat</button>
+    </div>
+    ${items}
+  </div>`;
+}
+
+function attachStatsEvents() {
+  document.querySelectorAll('[data-edit-st]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); document.getElementById(`st-form-${btn.dataset.editSt}`)?.classList.toggle('open'); });
+  });
+  document.querySelectorAll('[data-del-st]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.delSt);
+      showConfirm('Delete this stat?', () => { CONFIG.stats.splice(i,1); saveConfig(); renderTab('stats'); showToast('🗑 Stat deleted'); });
+    });
+  });
+  document.querySelectorAll('[data-save-st]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.saveSt);
+      CONFIG.stats[i].number = document.getElementById(`st-num-${i}`).value.trim();
+      CONFIG.stats[i].label  = document.getElementById(`st-lbl-${i}`).value.trim();
+      saveConfig(); renderTab('stats'); showToast('✓ Stat saved');
+    });
+  });
+  document.querySelectorAll('[data-cancel-st]').forEach(btn => {
+    btn.addEventListener('click', () => { document.getElementById(`st-form-${btn.dataset.cancelSt}`)?.classList.remove('open'); });
+  });
+  document.getElementById('add-st-btn')?.addEventListener('click', () => {
+    CONFIG.stats.push({ number:'0', label:'New Metric' });
+    saveConfig(); renderTab('stats');
+    setTimeout(() => {
+      const i = CONFIG.stats.length-1;
+      document.getElementById(`st-form-${i}`)?.classList.add('open');
+    }, 50);
+  });
+}
+
+/* ─── SECURITY ─── */
+function renderSecurityTab() {
+  return `<div class="ap-security-form">
+    <p class="ap-security-note">Change your admin password. The password is stored as a hash in your browser's localStorage — it protects the admin panel on this device.</p>
+    <div class="ap-field"><label class="ap-label">Current Password</label><input class="ap-input" type="password" id="sec-cur" placeholder="Current password..."></div>
+    <div class="ap-field"><label class="ap-label">New Password</label><input class="ap-input" type="password" id="sec-new" placeholder="New password..."></div>
+    <div class="ap-field"><label class="ap-label">Confirm New Password</label><input class="ap-input" type="password" id="sec-cfm" placeholder="Confirm..."></div>
+    <div class="login-err" id="sec-err"></div>
+    <button class="ap-save-profile" id="sec-save-btn">🔒 Update Password</button>
+  </div>`;
+}
+
+function renderThemeTab() {
+  const th = CONFIG.theme || DEFAULT_CONFIG.theme;
+  return `
+    <div class="ap-profile-form">
+      <div class="ap-field"><label class="ap-label">Accent color</label><input class="ap-input" type="color" id="th-accent" value="${th.accentColor}"></div>
+      <div class="ap-field"><label class="ap-label">Background color</label><input class="ap-input" type="color" id="th-bg" value="${th.bgColor}"></div>
+      <div class="ap-field"><label class="ap-label">Paper color</label><input class="ap-input" type="color" id="th-paper" value="${th.paperColor}"></div>
+      <div class="ap-field"><label class="ap-label">Cork color</label><input class="ap-input" type="color" id="th-cork" value="${th.corkColor}"></div>
+      <div class="ap-field">
+        <label class="ap-label">Heading font</label>
+        <select class="ap-select" id="th-heading">
+          <option value="'Permanent Marker', cursive" ${th.headingFont.includes('Permanent') ? 'selected' : ''}>Permanent Marker</option>
+          <option value="'Caveat', cursive" ${th.headingFont.includes('Caveat') ? 'selected' : ''}>Caveat</option>
+          <option value="'Kalam', cursive" ${th.headingFont.includes('Kalam') ? 'selected' : ''}>Kalam</option>
+          <option value="'Courier Prime', monospace" ${th.headingFont.includes('Courier') ? 'selected' : ''}>Courier Prime</option>
+          <option value="'Special Elite', cursive" ${th.headingFont.includes('Special') ? 'selected' : ''}>Special Elite</option>
+        </select>
+      </div>
+      <div class="ap-field">
+        <label class="ap-label">Body font</label>
+        <select class="ap-select" id="th-body">
+          <option value="'Caveat', cursive" ${th.bodyFont.includes('Caveat') ? 'selected' : ''}>Caveat</option>
+          <option value="'Kalam', cursive" ${th.bodyFont.includes('Kalam') ? 'selected' : ''}>Kalam</option>
+          <option value="'Courier Prime', monospace" ${th.bodyFont.includes('Courier') ? 'selected' : ''}>Courier Prime</option>
+          <option value="'Special Elite', cursive" ${th.bodyFont.includes('Special') ? 'selected' : ''}>Special Elite</option>
+        </select>
+      </div>
+      <button class="ap-save-profile" id="th-save-btn">💾 Save Theme</button>
+    </div>
+  `;
+}
+
+function attachThemeEvents() {
+  document.getElementById('th-save-btn').addEventListener('click', () => {
+    CONFIG.theme = {
+      accentColor: document.getElementById('th-accent').value,
+      bgColor: document.getElementById('th-bg').value,
+      paperColor: document.getElementById('th-paper').value,
+      corkColor: document.getElementById('th-cork').value,
+      headingFont: document.getElementById('th-heading').value,
+      bodyFont: document.getElementById('th-body').value,
+    };
+    applyTheme();
+    saveConfig();
+    showToast('✓ Theme saved');
+  });
+}
+
+function attachSecurityEvents() {
+  document.getElementById('sec-save-btn')?.addEventListener('click', () => {
+    const cur = document.getElementById('sec-cur').value;
+    const nw  = document.getElementById('sec-new').value;
+    const cfm = document.getElementById('sec-cfm').value;
+    const err = document.getElementById('sec-err');
+    if (hashStr(cur) !== getStoredHash()) { err.textContent = 'Current password is wrong'; return; }
+    if (nw.length < 4)   { err.textContent = 'Password must be at least 4 characters'; return; }
+    if (nw !== cfm)      { err.textContent = 'Passwords do not match'; return; }
+    localStorage.setItem(LS_PW_HASH, hashStr(nw));
+    err.textContent = '';
+    showToast('✓ Password updated');
+    document.getElementById('sec-cur').value = '';
+    document.getElementById('sec-new').value = '';
+    document.getElementById('sec-cfm').value = '';
+  });
+}
+
+/* ─── tab event dispatcher ─── */
+function attachTabEvents(tab) {
+  if (tab==='profile')     attachProfileEvents();
+  else if (tab==='nodes')  attachNodesEvents();
+  else if (tab==='skills') attachSkillsEvents();
+  else if (tab==='annotations') attachAnnotationsEvents();
+  else if (tab==='stats')  attachStatsEvents();
+  else if (tab === 'theme')  attachThemeEvents();   // новая строка
+  else if (tab==='security') attachSecurityEvents();
+}
+
+/* ─── helpers ─── */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function toHex(color) {
+  if (/^#[0-9a-f]{6}$/i.test(color)) return color;
+  // Try to convert named colors via canvas trick
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 1;
+    const ctx = c.getContext('2d'); ctx.fillStyle = color; ctx.fillRect(0,0,1,1);
+    const d = ctx.getImageData(0,0,1,1).data;
+    return '#' + [d[0],d[1],d[2]].map(x=>x.toString(16).padStart(2,'0')).join('');
+  } catch { return '#ffff00'; }
+}
+
+/* ─── export config ─── */
+function exportConfig() {
+  const json = JSON.stringify(CONFIG, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'homelab-config.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('↓ Exported homelab-config.json');
+}
+
+// Функция генерации строки DEFAULT_CONFIG из текущего CONFIG
+function generateDefaultConfigString() {
+  return 'const DEFAULT_CONFIG = ' + JSON.stringify(CONFIG, null, 2) + ';';
+}
+
+// Функция копирования текста в буфер обмена
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✓ DEFAULT_CONFIG copied to clipboard');
+  }).catch(err => {
+    console.error('Copy failed', err);
+    showToast('❌ Copy failed', 2000);
+  });
+}
+
+// Глубокое слияние объектов (для объединения импортированного конфига с DEFAULT)
+function mergeDeep(target, source) {
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      if (!target[key]) target[key] = {};
+      mergeDeep(target[key], source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+
+// Импорт конфига из выбранного файла
+function importConfigFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      // Сливаем с DEFAULT_CONFIG, чтобы не потерять обязательные поля
+      CONFIG = mergeDeep(JSON.parse(JSON.stringify(DEFAULT_CONFIG)), imported);
+      saveConfig();
+      rebuildAll();
+      showToast('✓ Config imported successfully');
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Invalid JSON file', 3000);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ─── reset to defaults ─── */
+function resetAllDefaults() {
+  showConfirm('Reset ALL content to defaults? This cannot be undone.', () => {
+    CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    localStorage.removeItem(LS_CONFIG);
+    saveConfig();
+    renderTab(currentTab);
+    showToast('↺ Reset to defaults');
+  });
+}
+
+/* ════════════════════════════════════════════
+   ANIMATIONS (injected)
+════════════════════════════════════════════ */
+function injectAnim() {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes drawStr { from { stroke-dashoffset: 9999; } to { stroke-dashoffset: 0; } }
+    @keyframes pulseDot { 0%,100% { r: 4; opacity: 0.6; } 50% { r: 7; opacity: 0.2; } }
+  `;
+  document.head.appendChild(style);
+}
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  injectAnim();
+  loadSavedConfig();
+  applyTheme();
+
+  // Render page
+  buildHero(); buildDashboard(); buildFooter(); buildLegend(); buildBoard();
+  setupPanZoom();
+
+  /* ── admin trigger button ── */
+  /* document.getElementById('admin-trigger').addEventListener('click', () => {
+    if (adminAuthed) {
+      if (document.getElementById('admin-panel').classList.contains('open')) closeAdminPanel();
+      else openAdminPanel();
+    } else { openLoginModal(); }
+  }); */
+
+  /* ── keyboard shortcut Ctrl+Shift+A ── */
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      e.preventDefault();
+      if (adminAuthed) {
+        if (document.getElementById('admin-panel').classList.contains('open')) closeAdminPanel();
+        else openAdminPanel();
+      } else { openLoginModal(); }
+    }
+    if (e.key === 'Escape') {
+      closeLoginModal();
+      closeAdminPanel();
+    }
+  });
+
+  /* ── login modal events ── */
+  document.getElementById('login-close-btn').addEventListener('click', closeLoginModal);
+  document.getElementById('login-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeLoginModal(); });
+  document.getElementById('login-submit-btn').addEventListener('click', tryLogin);
+  document.getElementById('login-pw').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+  /* ── admin panel events ── */
+  document.getElementById('ap-close-btn').addEventListener('click', closeAdminPanel);
+  document.getElementById('ap-tabs').addEventListener('click', e => {
+    const tab = e.target.dataset.tab;
+    if (tab) switchTab(tab);
+  });
+  document.getElementById('ap-apply-btn').addEventListener('click', () => {
+    saveConfig(); rebuildAll(); showToast('✓ Board rebuilt!');
+  });
+  document.getElementById('ap-export-btn').addEventListener('click', exportConfig);
+  document.getElementById('ap-reset-btn').addEventListener('click', resetAllDefaults);
+
+  /* ── confirm dialog events ── */
+  document.getElementById('ap-confirm-yes').addEventListener('click', () => {
+    document.getElementById('ap-confirm').classList.remove('open');
+    if (confirmCallback) { confirmCallback(); confirmCallback=null; }
+  });
+  document.getElementById('ap-confirm-no').addEventListener('click', () => {
+    document.getElementById('ap-confirm').classList.remove('open');
+    confirmCallback = null;
+  });
+  document.getElementById('ap-copy-default-btn').addEventListener('click', () => {
+    const configStr = generateDefaultConfigString();
+    copyToClipboard(configStr);
+  });
+  // Импорт JSON
+  const importInput = document.getElementById('import-file-input');
+  document.getElementById('ap-import-btn').addEventListener('click', () => {
+    importInput.click();
+  });
+  importInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      importConfigFromFile(file);
+    }
+    importInput.value = ''; // сброс, чтобы можно было выбрать тот же файл снова
+  });
+});
+</script>
+</body>
+</html>
