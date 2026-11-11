@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>flytrap.lab — Daniil Hvozdz · Homelab</title>
+<meta name="description" content="Two tiny PCs, 50 containers, a handful of home-made bots. The homelab of Daniil Hvozdz.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ───────────── TOKENS ───────────── */
+:root{
+  --paper:#ffffff; --ink:#000000; --mid:#5f5f5f; --soft:#efefef;
+  --accent:#12a150; --shadow:rgba(0,0,0,.22);
+  --b:3px;
+  --sans:"Archivo","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --rail:118px;
+}
+:root[data-theme="dark"]{
+  --paper:#0c0c0c; --ink:#f3f3f3; --mid:#a3a3a3; --soft:#1d1d1d;
+  --accent:#3ddc7a; --shadow:rgba(255,255,255,.2);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--sans);background:var(--paper);color:var(--ink);
+  display:grid;grid-template-columns:var(--rail) minmax(0,1fr);
+  height:100vh;height:100dvh;overflow:hidden;font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+ul{list-style:none}
+
+/* ───────────── LEFT RAIL (vertical marquee) ───────────── */
+.rail{border-right:4px solid var(--ink);display:grid;grid-template-columns:76px 1fr;overflow:hidden;user-select:none}
+.rail-col{position:relative;overflow:hidden}
+.rail-track{position:absolute;left:0;top:0;width:100%;will-change:transform;animation:rail 60s linear infinite}
+.rail-col.slow .rail-track{animation-duration:90s}
+.rail-text{display:block;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;text-transform:uppercase}
+.rail-col.big .rail-text{font-weight:900;font-size:98px;line-height:76px;letter-spacing:-.02em}
+.rail-col.tick .rail-text{font-weight:900;font-style:italic;font-size:30px;line-height:40px}
+.rail-col.tick b{font-style:normal}
+@keyframes rail{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-50%,0)}}
+
+/* ───────────── MAIN COLUMN ───────────── */
+.main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;min-width:0;min-height:0}
+
+.nav{display:flex;align-items:center;gap:clamp(12px,2.6vw,42px);padding:10px clamp(14px,2.4vw,36px);border-bottom:4px solid var(--ink);overflow:hidden}
+.nav-link{flex:none;font-weight:900;font-size:clamp(18px,2.7vw,46px);line-height:1;text-transform:uppercase;letter-spacing:-.01em;text-decoration:none}
+.nav-link:hover,.nav-link.on{font-style:italic}
+.nav-spacer{flex:1;min-width:0}
+.nav-btn{flex:none;border:var(--b) solid var(--ink);padding:7px 12px;font-weight:800;font-size:15px;text-transform:uppercase;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.nav-btn:hover{background:var(--ink);color:var(--paper)}
+.nav-btn svg{width:18px;height:18px}
+.logo{flex:none;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-weight:700;font-size:15px;line-height:1.05;white-space:nowrap}
+.logo svg{width:44px;height:44px}
+
+.menubar{display:flex;align-items:center;gap:4px;padding:0 clamp(8px,1.6vw,24px);border-bottom:4px solid var(--ink);font-weight:800;font-size:13.5px;text-transform:uppercase;position:relative;z-index:9000}
+.menu{position:relative}
+.menu-btn,.mb-btn{padding:8px 10px;font-weight:800;text-transform:uppercase;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.menu-btn:hover,.menu.open .menu-btn,.mb-btn:hover{background:var(--ink);color:var(--paper)}
+.menu-pop{display:none;position:absolute;left:0;top:100%;min-width:210px;background:var(--paper);border:var(--b) solid var(--ink);box-shadow:5px 5px 0 var(--shadow)}
+.menu.open .menu-pop{display:block}
+.menu-pop button{display:block;width:100%;text-align:left;padding:8px 12px;font-weight:600;text-transform:none;font-size:14px}
+.menu-pop button:hover{background:var(--ink);color:var(--paper)}
+.mb-spacer{flex:1}
+.mb-btn svg{width:15px;height:15px}
+.clock{padding:8px 10px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.clock svg{width:15px;height:15px}
+
+/* ───────────── DESKTOP ───────────── */
+.desktop{position:relative;overflow:hidden;min-height:0;
+  background-image:radial-gradient(var(--soft) 1.2px,transparent 1.3px);background-size:22px 22px}
+.icons{position:absolute;inset:18px auto 18px 18px;display:grid;grid-auto-flow:column;grid-template-rows:repeat(auto-fill,102px);grid-auto-columns:116px;gap:4px 6px;align-content:start}
+.icon{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;height:102px;font-size:13px;text-align:center;border:2px solid transparent}
+.icon svg{width:44px;height:44px;flex:none}
+.icon:hover{border-color:var(--ink);background:var(--paper)}
+.icon.open span{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
+
+.win{position:absolute;left:0;top:0;display:flex;flex-direction:column;background:var(--paper);
+  border:var(--b) solid var(--ink);box-shadow:7px 7px 0 var(--shadow);
+  min-width:260px;min-height:120px;max-width:100%;max-height:100%;overflow:hidden;resize:both}
+.win.is-min,.win.is-closed{display:none}
+.win.is-max{transform:none!important;width:100%!important;height:100%!important;max-height:none!important;box-shadow:none;resize:none}
+.win.dragging{box-shadow:12px 12px 0 var(--shadow);will-change:transform}
+.win-bar{flex:none;display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);padding:4px 4px 4px 10px;cursor:grab;user-select:none;touch-action:none}
+.win.dragging .win-bar{cursor:grabbing}
+.win-bar svg.wi{width:20px;height:20px;flex:none}
+.win-title{flex:1;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win-ctl{display:flex;gap:3px}
+.win-ctl button{width:26px;height:26px;border:2px solid var(--paper);color:var(--paper);display:grid;place-items:center}
+.win-ctl button:hover{background:var(--paper);color:var(--ink)}
+.win-ctl svg{width:14px;height:14px}
+.win-body{flex:1;min-height:0;overflow:auto;padding:16px 18px 18px;overscroll-behavior:contain}
+.win-body.flush{padding:0}
+
+.taskbar{display:flex;gap:8px;padding:6px clamp(8px,1.2vw,14px);border-top:4px solid var(--ink);overflow-x:auto;min-height:50px}
+.task{flex:0 1 190px;min-width:54px;border:5px double var(--ink);padding:3px 10px;display:flex;align-items:center;gap:8px;font-size:15px;white-space:nowrap;overflow:hidden}
+.task svg{width:20px;height:20px;flex:none}
+.task.on{background:var(--ink);color:var(--paper);border-color:var(--paper);outline:2px solid var(--ink)}
+.task.min{color:var(--mid)}
+.taskbar-empty{color:var(--mid);font-size:13px;align-self:center;padding-left:4px}
+
+/* ───────────── CONTENT PRIMITIVES ───────────── */
+h2{font-weight:900;font-size:24px;line-height:1.05;text-transform:uppercase;letter-spacing:-.01em;padding-bottom:8px;border-bottom:4px solid var(--ink);margin-bottom:12px}
+h3{font-weight:800;font-size:16px;line-height:1.2}
+.lead{font-size:16px}
+.muted{color:var(--mid)}
+.small{font-size:13px}
+.mono{font-family:var(--mono);font-size:12.5px}
+.tag{display:inline-block;border:2px solid var(--ink);padding:0 6px;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;line-height:18px;white-space:nowrap}
+.tag.inv{background:var(--ink);color:var(--paper)}
+.tag.live{border-color:var(--accent);color:var(--accent)}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.btn{display:inline-flex;align-items:center;gap:7px;border:var(--b) solid var(--ink);padding:6px 12px;font-weight:800;text-transform:uppercase;font-size:13.5px;text-decoration:none}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn svg{width:16px;height:16px}
+.rule{border:0;border-top:2px solid var(--ink);margin:14px 0}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:6px}
+
+/* about */
+.about-name{font-weight:900;font-size:34px;line-height:.95;text-transform:uppercase;letter-spacing:-.02em}
+.about-role{font-style:italic;font-weight:800;margin:6px 0 12px}
+.about-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+
+/* servers */
+.nodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.node{border:var(--b) solid var(--ink);padding:12px 14px}
+.node-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px}
+.node-name{font-weight:900;font-size:26px;text-transform:uppercase;letter-spacing:-.01em;line-height:1}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:10px 0;font-size:14px}
+.kv dt{font-weight:800;text-transform:uppercase;font-size:11.5px;letter-spacing:.04em;color:var(--mid);padding-top:2px}
+
+/* network diagram */
+.net svg{display:block;width:100%;height:auto}
+.net .bx{fill:var(--paper);stroke:var(--ink);stroke-width:2.5}
+.net .bx.inv{fill:var(--ink)}
+.net .ln{fill:none;stroke:var(--ink);stroke-width:2}
+.net .dash{fill:none;stroke:var(--ink);stroke-width:2;stroke-dasharray:6 5}
+.net text{font-family:var(--sans);fill:var(--ink);font-size:12px}
+.net text.t{font-weight:900;font-size:13.5px;letter-spacing:.02em}
+.net text.inv{fill:var(--paper)}
+.net text.l{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;fill:var(--mid)}
+.net .ah{fill:var(--ink)}
+.net-cap{padding:10px 16px 14px;border-top:var(--b) solid var(--ink);font-size:13.5px}
+
+/* services */
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{border:2px solid var(--ink);padding:2px 9px;font-size:12.5px;font-weight:800;text-transform:uppercase}
+.chip:hover{background:var(--soft)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.filters .sep{width:2px;background:var(--ink);margin:0 4px}
+.svc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:9px 0;border-bottom:2px solid var(--ink)}
+.svc:last-child{border-bottom:0}
+.svc-name{font-weight:800;font-size:16px}
+.svc-desc{grid-column:1/-1;color:var(--mid);font-size:13.5px}
+.svc-count{font-size:13px;color:var(--mid);margin-bottom:4px}
+
+/* media pipeline */
+.pipe{display:grid;gap:0}
+.stage{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;align-items:start;border:var(--b) solid var(--ink);padding:10px 12px}
+.stage + .stage{margin-top:22px;position:relative}
+.stage + .stage::before{content:"";position:absolute;left:50%;top:-22px;height:19px;border-left:3px solid var(--ink)}
+.stage + .stage::after{content:"";position:absolute;left:50%;top:-11px;width:9px;height:9px;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:translateX(-6px) rotate(45deg)}
+.stage-k{font-weight:900;text-transform:uppercase;font-size:13px;letter-spacing:.04em}
+.stage p{font-size:13.5px;color:var(--mid);margin-top:5px}
+
+/* projects */
+.proj{border:var(--b) solid var(--ink);padding:12px 14px;margin-bottom:12px}
+.proj:last-child{margin-bottom:0}
+.proj-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:5px}
+.proj-head h3{font-size:19px;font-weight:900;text-transform:uppercase}
+.proj p{font-size:14px;margin-bottom:8px}
+.proj ul{font-size:13.5px;color:var(--mid);margin:0 0 9px 16px;list-style:square}
+
+/* monitoring */
+.mon{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.mon-card{border:var(--b) solid var(--ink);padding:10px 12px}
+.mon-card h3{text-transform:uppercase;font-weight:900;margin-bottom:6px}
+.mon-card li{font-size:13.5px;padding:3px 0;border-top:1px solid var(--soft)}
+.mon-card li b{font-weight:800}
+
+/* stack */
+.stack-group{margin-bottom:14px}
+.stack-group h3{text-transform:uppercase;font-size:12px;letter-spacing:.06em;color:var(--mid);margin-bottom:6px}
+.stack-group .tag{font-size:13px;line-height:24px;padding:0 9px;text-transform:none;letter-spacing:0}
+
+/* sysmon */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:var(--b) solid var(--ink)}
+.tile{min-width:0;padding:9px 9px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+.tile:nth-child(3n){border-right:0}
+.tile:nth-last-child(-n+3){border-bottom:0}
+.tile b{display:block;font-weight:900;font-size:27px;line-height:1;letter-spacing:-.02em}
+.tile span{display:block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--mid);margin-top:3px;line-height:1.25}
+.bars{margin-top:14px;display:grid;gap:7px}
+.bar{display:grid;grid-template-columns:128px minmax(0,1fr) 26px;gap:8px;align-items:center;font-size:12.5px;font-weight:800;text-transform:uppercase}
+.bar i{display:block;height:14px;border:2px solid var(--ink);position:relative}
+.bar i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--v);background:var(--ink)}
+.bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar em{font-style:normal;text-align:right}
+
+/* changelog */
+.log h3{background:var(--ink);color:var(--paper);display:inline-block;padding:1px 8px;text-transform:uppercase;font-size:12.5px;letter-spacing:.05em;margin:12px 0 4px}
+.log h3:first-child{margin-top:0}
+.log li{padding:8px 0;border-bottom:2px solid var(--ink);font-size:14px}
+.log li:last-child{border-bottom:0}
+.log li b{font-weight:800}
+
+/* terminal */
+.term{background:#050505;color:#eaeaea;font-family:var(--mono);font-size:13px;line-height:1.5;height:100%;min-height:260px;display:flex;flex-direction:column}
+.term-out{flex:1;overflow:auto;padding:12px 14px 4px;white-space:pre-wrap;word-break:break-word}
+.term-out .c{color:#3ddc7a}
+.term-out .d{color:#8f8f8f}
+.term-in{display:flex;gap:8px;padding:6px 14px 12px;align-items:center}
+.term-in label{color:#3ddc7a;white-space:nowrap}
+.term-in input{flex:1;min-width:0;background:none;border:0;color:inherit;font:inherit;outline:none;caret-color:#3ddc7a}
+
+/* ───────────── STACKED MODE (phones + toggle) ───────────── */
+body.stacked .desktop{overflow:auto;-webkit-overflow-scrolling:touch}
+body.stacked .icons{position:static;display:flex;flex-wrap:wrap;gap:2px;padding:12px;justify-content:center;border-bottom:4px solid var(--ink);background:var(--paper)}
+body.stacked .icon{width:92px;height:auto}
+body.stacked .icon.open span{text-decoration:none}
+body.stacked .wins{display:grid;gap:18px;max-width:860px;margin:0 auto;padding:18px 14px 28px}
+body.stacked .win{position:static;transform:none!important;width:auto!important;height:auto!important;max-height:none!important;resize:none;box-shadow:5px 5px 0 var(--shadow);scroll-margin-top:12px}
+body.stacked .win.is-min{display:flex}
+body.stacked .win-bar{cursor:default;touch-action:auto}
+body.stacked .win-ctl .b-min,body.stacked .win-ctl .b-max{display:none}
+body.stacked .win-body{overflow:visible}
+body.stacked .term{height:340px}
+body.stacked .term-out{overflow:auto}
+
+@media (max-width:1100px){.logo{display:none}}
+@media (max-width:820px){
+  body{grid-template-columns:minmax(0,1fr);font-size:15px}
+  .rail,.logo,.menu,.taskbar,#btn-layout,#btn-random{display:none}
+  .nav{gap:clamp(8px,3vw,16px);padding:10px 12px}
+  .nav-link{font-size:clamp(13px,4.1vw,20px)}
+  .menubar{font-size:12px}
+  .icon svg{width:36px;height:36px}
+  body.stacked .icon{width:78px;font-size:11.5px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tile:nth-child(3n){border-right:2px solid var(--ink)}
+  .tile:nth-child(2n){border-right:0}
+  .tile:nth-last-child(-n+3){border-bottom:2px solid var(--ink)}
+  .tile:nth-last-child(-n+2){border-bottom:0}
+  .stage{grid-template-columns:1fr}
+  .net{overflow-x:auto}
+  .net svg{min-width:640px}
+  .term-in input{font-size:16px}
+  .svc{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.rail-track{animation:none}}
+</style>
+</head>
+<body>
+
+<!-- ═════════ LEFT RAIL ═════════ -->
+<aside class="rail" aria-hidden="true">
+  <div class="rail-col big"><div class="rail-track" id="rail-big"></div></div>
+  <div class="rail-col tick slow"><div class="rail-track" id="rail-tick"></div></div>
+</aside>
+
+<div class="main">
+  <!-- ═════════ NAV ═════════ -->
+  <header class="nav">
+    <a href="#" class="nav-link on" data-nav="home">Home</a>
+    <a href="#" class="nav-link" data-nav="services">Services</a>
+    <a href="#" class="nav-link" data-nav="projects">Projects</a>
+    <a href="#" class="nav-link" data-nav="about">About</a>
+    <span class="nav-spacer"></span>
+    <button class="nav-btn" id="btn-random" title="Open a random window">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7h3.5c2.5 0 3.7 1.4 5 3.5l1 1.6C13.800 14.200 15 15.500 17.500 15.500H21M3 16h3.500c1.500 0 2.500-.5 3.400-1.400M21 7.500h-3.500c-1.500 0-2.500.5-3.400 1.400M18.500 5l2.500 2.500L18.500 10M18.500 13l2.500 2.500-2.500 2.500"/></svg>
+      Random
+    </button>
+    <div class="logo" title="flytrap.lab">
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M24 44V28"/><path d="M24 28C12 28 6 20 8 8c4 1 6 3 8 6 1-4 3-7 8-10 5 3 7 6 8 10 2-3 4-5 8-6 2 12-4 20-16 20Z"/><path d="M16 14v6M24 12v9M32 14v6"/><path d="M24 36c-4 0-7-1-9-4M24 40c4 0 7-1 9-4"/></svg>
+      <span>flytrap<br>.lab</span>
+    </div>
+  </header>
+
+  <!-- ═════════ MENU BAR ═════════ -->
+  <div class="menubar">
+    <div class="menu" id="menu-file"><button class="menu-btn" aria-haspopup="true">File</button>
+      <div class="menu-pop"><button data-act="open-all">Open all windows</button><button data-act="close-all">Close all windows</button></div></div>
+    <div class="menu" id="menu-view"><button class="menu-btn" aria-haspopup="true">View</button>
+      <div class="menu-pop"><button data-act="tidy">Tidy windows</button><button data-act="layout">Toggle windowed / stacked</button><button data-act="theme">Toggle light / dark</button></div></div>
+    <div class="menu" id="menu-win"><button class="menu-btn" aria-haspopup="true">Windows</button>
+      <div class="menu-pop" id="menu-win-pop"></div></div>
+    <span class="mb-spacer"></span>
+    <button class="mb-btn" id="btn-theme"></button>
+    <button class="mb-btn" id="btn-layout"></button>
+    <span class="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="clock"></span></span>
+  </div>
+
+  <!-- ═════════ DESKTOP ═════════ -->
+  <main class="desktop" id="desktop">
+    <nav class="icons" id="icons" aria-label="Applications"></nav>
+    <div class="wins" id="wins"></div>
+    <noscript><p style="padding:24px">This page is a small desktop-style app and needs JavaScript. — Daniil Hvozdz, github.com/flytrapq</p></noscript>
+  </main>
+
+  <!-- ═════════ TASKBAR ═════════ -->
+  <footer class="taskbar" id="taskbar" aria-label="Open windows"></footer>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   ДАННЫЕ — всё содержимое страницы лежит в объекте LAB.
+   Чтобы обновить портфолио, правь только этот блок.
+   На странице намеренно нет IP-адресов, портов и доменов.
+════════════════════════════════════════════════════════════════ */
+const LAB = {
+  snapshot: "Nov 2026",
+  profile: {
+    name: "Daniil Hvozdz",
+    role: "Homelab Enthusiast",
+    tagline: "Building my own internet, one container at a time. Self-hosted · Open Source · Always learning.",
+    intro: "Two tiny Lenovo PCs under a desk run everything I use daily: DNS, VPN, media, finances, local AI and a handful of Telegram bots I wrote myself.",
+    links: [
+      { label: "GitHub",   url: "https://github.com/flytrapq" },
+      { label: "LinkedIn", url: "https://linkedin.com/in/daniilh" }
+    ]
+  },
+
+  nodes: [
+    { id: "tinyv4", role: "Infra node", model: "Lenovo ThinkCentre M700 Tiny", cpu: "Intel Core i5-6400T · 4 cores",
+      ram: "8 GB DDR4", disk: "256 GB SSD", os: "Ubuntu 24.04 LTS", link: "Wired Ethernet",
+      containers: 19, stacks: 12,
+      does: "The front door. DNS, reverse proxy, VPN, monitoring and the listing bots." },
+    { id: "tinyv9", role: "Data & media node", model: "Lenovo ThinkCentre M710q Tiny", cpu: "Intel Core i5-7400T · 4 cores",
+      ram: "8 GB DDR4", disk: "256 GB SSD + 256 GB NVMe (mergerfs pool)", os: "Ubuntu 24.04 LTS", link: "Wi-Fi",
+      containers: 31, stacks: 13,
+      does: "The heavy lifter. Media library, VPN-routed downloads, local AI, finances and the news bot." }
+  ],
+
+  stats: [
+    { n: "50",  l: "Containers" },
+    { n: "25",  l: "Compose stacks" },
+    { n: "2",   l: "Nodes" },
+    { n: "18",  l: "Proxied hosts" },
+    { n: "4",   l: "Telegram bots" },
+    { n: "24/7", l: "Self-hosted" }
+  ],
+
+  categories: {
+    net:   "Network",
+    mon:   "Monitoring",
+    media: "Media",
+    dl:    "Downloads",
+    ai:    "AI",
+    life:  "Finance & health",
+    data:  "Data",
+    bot:   "My bots"
+  },
+
+  /* h: "tinyv4" | "tinyv9" | "both" | "cloud" */
+  services: [
+    { n: "Nginx Proxy Manager", c: "net", h: "tinyv4", d: "Reverse proxy with Let's Encrypt SSL. Routes 18 hosts to services on both nodes." },
+    { n: "AdGuard Home",        c: "net", h: "tinyv4", d: "Network-wide DNS with ad blocking and local DNS rewrites." },
+    { n: "WireGuard (wg-easy)", c: "net", h: "tinyv4", d: "Classic VPN tunnel into the home network." },
+    { n: "Tailscale",           c: "net", h: "both",   d: "Mesh VPN on both nodes. tinyv4 advertises the home subnet." },
+    { n: "Cloudflare DNS",      c: "net", h: "cloud",  d: "Public DNS for the lab domain." },
+    { n: "ufw + fail2ban",      c: "net", h: "both",   d: "Default-deny firewall and brute-force protection." },
+
+    { n: "Prometheus",          c: "mon", h: "tinyv4", d: "Scrapes both nodes, every container and app-level metrics." },
+    { n: "Grafana",             c: "mon", h: "tinyv4", d: "Dashboards for hosts and containers." },
+    { n: "cAdvisor",            c: "mon", h: "tinyv4", d: "Per-container resource metrics." },
+    { n: "node-exporter",       c: "mon", h: "both",   d: "Host metrics for Prometheus." },
+    { n: "Uptime Kuma",         c: "mon", h: "both",   d: "Availability checks for every service, plus push monitors for cron jobs." },
+    { n: "Portainer",           c: "mon", h: "both",   d: "Docker management UI, with an agent on tinyv9." },
+    { n: "Homarr",              c: "mon", h: "tinyv4", d: "Start page for the whole lab." },
+    { n: "Dashdot",             c: "mon", h: "both",   d: "At-a-glance hardware status page." },
+    { n: "Glances",             c: "mon", h: "tinyv4", d: "Live system monitor." },
+    { n: "Cockpit",             c: "mon", h: "tinyv9", d: "Web console for the host." },
+    { n: "Hardware watchdog",   c: "mon", h: "both",   d: "Intel TCO watchdog resets a node automatically if it hangs." },
+
+    { n: "Jellyfin",            c: "media", h: "tinyv9", d: "Media server for TV, phone and browser." },
+    { n: "Jellyseerr",          c: "media", h: "tinyv9", d: "Request portal for movies, shows and music." },
+    { n: "Sonarr",              c: "media", h: "tinyv9", d: "TV series automation." },
+    { n: "Radarr",              c: "media", h: "tinyv9", d: "Movie automation." },
+    { n: "Lidarr",              c: "media", h: "tinyv9", d: "Music automation." },
+    { n: "Prowlarr",            c: "media", h: "tinyv9", d: "One indexer manager for all the *arr apps." },
+    { n: "Bazarr",              c: "media", h: "tinyv9", d: "Subtitles for movies and series." },
+    { n: "Beets",               c: "media", h: "tinyv9", d: "Tags and organises the music library on a nightly timer." },
+    { n: "SoulSync",            c: "media", h: "tinyv9", d: "Syncs playlists and fills the gaps in the music library." },
+    { n: "AudioMuse-AI",        c: "media", h: "tinyv9", d: "Sonic analysis and auto-generated playlists. Flask app, worker, Postgres, Redis." },
+
+    { n: "Gluetun",             c: "dl", h: "tinyv9", d: "VPN gateway container. All download traffic leaves through it." },
+    { n: "qBittorrent",         c: "dl", h: "tinyv9", d: "Torrent client, networked through Gluetun." },
+    { n: "slskd",               c: "dl", h: "tinyv9", d: "Soulseek client, networked through Gluetun." },
+    { n: "Bitmagnet",           c: "dl", h: "tinyv9", d: "Self-hosted DHT indexer backed by Postgres with pgvecto.rs." },
+
+    { n: "Ollama",              c: "ai", h: "tinyv9", d: "Local LLM runtime." },
+    { n: "Open WebUI",          c: "ai", h: "tinyv9", d: "Chat interface for the local models." },
+
+    { n: "ezBookkeeping",       c: "life", h: "tinyv9", d: "Personal finance ledger, fed automatically by my bank bridge." },
+    { n: "CalorieMate",         c: "life", h: "tinyv9", d: "Calorie tracker with photo recognition. PocketBase plus a CLIP model service." },
+    { n: "Schautrack",          c: "life", h: "tinyv9", d: "Nutrition tracker with Postgres." },
+    { n: "SparkyFitness",       c: "life", h: "tinyv4", d: "Fitness and nutrition tracker. Frontend, API and Postgres." },
+
+    { n: "PostgreSQL + Adminer", c: "data", h: "tinyv4", d: "Shared database with a web client." },
+    { n: "mergerfs pool",       c: "data", h: "tinyv9", d: "SSD and NVMe merged into one ~465 GB pool for media and downloads." },
+    { n: "Samba",               c: "data", h: "tinyv9", d: "Network shares for the home LAN." },
+    { n: "Mosquitto",           c: "data", h: "tinyv4", d: "MQTT broker." },
+
+    { n: "Sunshine Autos",      c: "bot", h: "tinyv4", d: "My unified listings bot for two Lithuanian classifieds sites." },
+    { n: "Ocean View",          c: "bot", h: "tinyv4", d: "My original real-estate listings bot. Still running." },
+    { n: "The Brief",           c: "bot", h: "tinyv9", d: "My personal morning news digest, scored by an LLM." },
+    { n: "Bank bridge",         c: "bot", h: "tinyv9", d: "My daily job that syncs bank transactions into ezBookkeeping." },
+    { n: "Flytrap Alerts",      c: "bot", h: "both",   d: "Telegram alerts whenever Uptime Kuma sees a service go down." }
+  ],
+
+  pipeline: [
+    { k: "Request",  apps: ["Jellyseerr"], d: "Someone asks for a movie, a show or an album." },
+    { k: "Find",     apps: ["Sonarr", "Radarr", "Lidarr", "Prowlarr"], d: "The *arr apps look it up through one shared indexer manager." },
+    { k: "Fetch",    apps: ["Gluetun", "qBittorrent", "slskd", "Bitmagnet"], d: "Download clients share the network stack of a VPN container, so nothing leaves outside the tunnel." },
+    { k: "Organise", apps: ["Bazarr", "Beets", "SoulSync"], d: "Subtitles, tags and folder structure are fixed automatically. Beets runs on a nightly timer." },
+    { k: "Play",     apps: ["Jellyfin", "AudioMuse-AI"], d: "Jellyfin streams to every device. AudioMuse-AI builds playlists from how tracks sound." }
+  ],
+
+  projects: [
+    { n: "Sunshine Autos", s: "live", url: null,
+      d: "One Telegram bot that watches aruodas.lt and skelbiu.lt and pings each user about new listings matching their saved searches.",
+      pts: ["Two source adapters behind one abstract interface", "Catalog of ~6,500 categories built by my own crawler", "Per-user search profiles, two-phase storage so no listing is lost on a network error"],
+      tech: ["Python", "curl_cffi", "Selenium", "Telegram Bot API", "Docker Compose"] },
+    { n: "The Brief", s: "live", url: null,
+      d: "A personal news digest. Every morning it reads ten RSS feeds, clusters the stories, has an LLM score them for personal relevance and sends the short list to Telegram.",
+      pts: ["Pipeline: collect → dedupe → cluster → score → group → write → deliver", "Gemini model chain with automatic fallback", "Thresholds calibrated offline on a hand-labelled dataset, tuned for per-class recall"],
+      tech: ["Python 3.12", "aiogram", "APScheduler", "Gemini API", "Docker Compose"] },
+    { n: "Bank bridge", s: "live", url: null,
+      d: "Pulls my bank transactions over PSD2 open banking (Enable Banking) and writes them into self-hosted ezBookkeeping, so nothing is typed in by hand.",
+      pts: ["Rolling 7-day deduplication", "Keyword-based category mapping, internal transfers detected by IBAN", "Telegram alerts, Uptime Kuma push monitor, session-expiry warnings"],
+      tech: ["Python", "PSD2", "cron", "Uptime Kuma"] },
+    { n: "Flytrap Alerts", s: "building", url: null,
+      d: "Telegram alerts for the whole lab, driven by Uptime Kuma. Version 2.0 is in design: on a DOWN alert an agent pulls the failing service's logs and replies with the likely cause and fix.",
+      pts: [],
+      tech: ["Uptime Kuma", "Telegram", "Gemini API"] },
+    { n: "Ocean View", s: "legacy", url: null,
+      d: "The first listings bot, for aruodas.lt only. It grew into Sunshine Autos and still runs next to it.",
+      pts: [],
+      tech: ["Python", "Selenium", "Docker"] },
+    { n: "Kirtis", s: "live", url: "https://github.com/flytrapq/kirtis-extension",
+      d: "A Firefox extension that shows the stress pattern of any Lithuanian word you select on a page. Not homelab, but it lives on the same GitHub.",
+      pts: [],
+      tech: ["JavaScript", "WebExtensions", "Shadow DOM"] }
+  ],
+
+  monitoring: [
+    { t: "Metrics", items: [["Prometheus", "scrapes both nodes"], ["node-exporter", "host metrics ×2"], ["cAdvisor", "per-container metrics"], ["Grafana", "dashboards"]] },
+    { t: "Uptime & alerts", items: [["Uptime Kuma", "one instance per node"], ["Push monitors", "for cron jobs"], ["Flytrap Alerts", "Telegram notifications"]] },
+    { t: "Management", items: [["Portainer", "Docker UI + remote agent"], ["Cockpit", "host web console"], ["Homarr", "start page"], ["Dashdot · Glances", "live status"]] },
+    { t: "Self-healing", items: [["Hardware watchdog", "resets a hung node"], ["Wi-Fi check", "reconnects every 2 min if needed"], ["Restart policies", "on every container"], ["Unattended upgrades", "security patches"]] }
+  ],
+
+  stack: [
+    { t: "Systems",   items: ["Linux", "Ubuntu Server", "Bash", "systemd", "cron", "LVM", "mergerfs", "Samba"] },
+    { t: "Containers", items: ["Docker", "Docker Compose", "Portainer"] },
+    { t: "Networking", items: ["Nginx", "Nginx Proxy Manager", "WireGuard", "Tailscale", "AdGuard Home", "Cloudflare", "Let's Encrypt", "ufw"] },
+    { t: "Observability", items: ["Prometheus", "Grafana", "cAdvisor", "Uptime Kuma"] },
+    { t: "Code",      items: ["Python", "aiogram", "Selenium", "JavaScript", "YAML", "Git"] },
+    { t: "Data & AI", items: ["PostgreSQL", "Redis", "Ollama", "Gemini API"] },
+    { t: "Also on the bench", items: ["Ansible", "Terraform", "ZFS"] }
+  ],
+
+  changelog: [
+    { t: "Nov 2026", items: [
+      ["Tailscale mesh", "Both nodes are back on the tailnet, and tinyv4 now routes the home subnet."],
+      ["Watchdog tuned", "The hardware watchdog no longer reboots a node over a short Wi-Fi drop. A small script reconnects Wi-Fi instead."],
+      ["Full audit", "Every stack on both nodes documented: 50 containers in 25 Compose projects."],
+      ["Flytrap Alerts 2.0", "Design started for AI log analysis on DOWN alerts."]
+    ]},
+    { t: "Earlier in 2026", items: [
+      ["Sunshine Autos", "The unified two-source listings bot went live next to Ocean View."],
+      ["The Brief", "The news digest reached its 32nd iteration, with calibrated scoring."],
+      ["Bank bridge", "Daily bank sync into ezBookkeeping has been running in production."]
+    ]},
+    { t: "Next", items: [
+      ["Wired uplink", "Move tinyv9 from Wi-Fi to Ethernet."],
+      ["More storage", "The media pool is nearly full."],
+      ["Flytrap Alerts 2.0", "Ship the log-reading agent."]
+    ]}
+  ]
+};
+
+/* ════════════════════════════════════════════════════════════════
+   ICONS (inline, 24×24 stroke)
+════════════════════════════════════════════════════════════════ */
+const IC = {
+  about:    '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/>',
+  servers:  '<rect x="3" y="3" width="18" height="7"/><rect x="3" y="14" width="18" height="7"/><path d="M7 6.500h.01M7 17.500h.01M11 6.500h6M11 17.500h6M12 10v4"/>',
+  network:  '<circle cx="12" cy="5" r="2.500"/><circle cx="5" cy="19" r="2.500"/><circle cx="19" cy="19" r="2.500"/><path d="M11 7.300 6.200 16.800M13 7.300l4.800 9.500M7.500 19h9"/>',
+  services: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
+  media:    '<rect x="2.500" y="4" width="19" height="13"/><path d="M10 7.500v6l5-3zM8 21h8M12 17v4"/>',
+  projects: '<rect x="4" y="8" width="16" height="12"/><path d="M12 8V4M12 4h.01M9 13h.01M15 13h.01M9 17h6M2 13v3M22 13v3"/>',
+  monitor:  '<path d="M2 12h4l2.500-7 4 14 3-9 1.500 2H22"/>',
+  stack:    '<path d="m12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/>',
+  terminal: '<rect x="2.500" y="4" width="19" height="16"/><path d="m6.500 9 3.500 3-3.500 3M12.500 15.500h5"/>',
+  log:      '<path d="M5 3h11l3 3v15H5z"/><path d="M8.500 9h7M8.500 13h7M8.500 17h4"/>',
+  sysmon:   '<path d="M4 20V10M9.500 20V4M15 20v-7M20.500 20V8"/><path d="M2 20h20"/>'
+};
+const svg = (name, cls) => `<svg ${cls ? `class="${cls}" ` : ""}viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.700" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[name]}</svg>`;
+const UI = {
+  min: '<svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.200" fill="none"><path d="M2 7h10"/></svg>',
+  max: '<svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.200" fill="none"><rect x="2" y="2" width="10" height="10"/></svg>',
+  close: '<svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.200" fill="none"><path d="m2 2 10 10M12 2 2 12"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.400"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.400"><path d="M20 14A8 8 0 1 1 10 4a6.500 6.500 0 0 0 10 10Z"/></svg>',
+  wins: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.400"><rect x="3" y="4" width="18" height="16"/><path d="M3 9h18"/></svg>',
+  rows: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.400"><path d="M3 6h18M3 12h18M3 18h18"/></svg>',
+  ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.400"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg>'
+};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const hostLabel = h => h === "both" ? "both nodes" : h;
+const containersTotal = LAB.nodes.reduce((a, n) => a + n.containers, 0);
+
+/* ════════════════════════════════════════════════════════════════
+   WINDOW CONTENT
+════════════════════════════════════════════════════════════════ */
+const VIEW = {
+  about() {
+    const p = LAB.profile;
+    return `<div class="about-name">${esc(p.name)}</div>
+      <div class="about-role">${esc(p.role)}</div>
+      <p class="lead">${esc(p.tagline)}</p>
+      <hr class="rule">
+      <p>${esc(p.intro)}</p>
+      <div class="about-links">${p.links.map(l => `<a class="btn" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ${UI.ext}</a>`).join("")}</div>
+      <p class="small muted" style="margin-top:14px">Click an icon to open a window. Drag windows by the title bar.</p>`;
+  },
+
+  servers() {
+    return `<h2>Hardware</h2><div class="nodes">${LAB.nodes.map(n => `
+      <article class="node">
+        <div class="node-head"><span class="node-name">${esc(n.id)}</span><span class="tag inv">${esc(n.role)}</span></div>
+        <p class="small muted">${esc(n.model)}</p>
+        <dl class="kv">
+          <dt>CPU</dt><dd>${esc(n.cpu)}</dd>
+          <dt>RAM</dt><dd>${esc(n.ram)}</dd>
+          <dt>Disk</dt><dd>${esc(n.disk)}</dd>
+          <dt>OS</dt><dd>${esc(n.os)}</dd>
+          <dt>Uplink</dt><dd>${esc(n.link)}</dd>
+          <dt>Docker</dt><dd>${n.containers} containers · ${n.stacks} stacks</dd>
+        </dl>
+        <p class="small">${esc(n.does)}</p>
+      </article>`).join("")}</div>`;
+  },
+
+  network() {
+    const arrow = (x, y, dir) => {
+      const p = { r: `${x},${y} ${x - 8},${y - 4.500} ${x - 8},${y + 4.500}`, d: `${x},${y} ${x - 4.500},${y - 8} ${x + 4.500},${y - 8}`, l: `${x},${y} ${x + 8},${y - 4.500} ${x + 8},${y + 4.500}` }[dir];
+      return `<polygon class="ah" points="${p}"/>`;
+    };
+    return `<div class="net"><svg viewBox="0 0 720 440" role="img" aria-label="Network diagram: internet and Cloudflare DNS reach the home router, which forwards web traffic to tinyv4. tinyv4 proxies, monitors and manages tinyv9. Both nodes sit on a Tailscale mesh reachable from my devices and send alerts to Telegram.">
+      <rect class="dash" x="10" y="186" width="700" height="192" rx="10"/>
+      <rect class="bx inv" x="20" y="16" width="130" height="42"/><text class="t inv" x="85" y="42" text-anchor="middle">INTERNET</text>
+      <rect class="bx" x="200" y="16" width="170" height="42"/><text class="t" x="285" y="42" text-anchor="middle">CLOUDFLARE DNS</text>
+      <rect class="bx" x="550" y="16" width="150" height="42"/><text class="t" x="625" y="35" text-anchor="middle">MY DEVICES</text><text x="625" y="50" text-anchor="middle">phone · laptop</text>
+      <rect class="bx" x="170" y="102" width="230" height="42"/><text class="t" x="285" y="128" text-anchor="middle">HOME ROUTER · NAT</text>
+
+      <path class="ln" d="M150 37h42"/>${arrow(200, 37, "r")}<text class="l" x="175" y="29" text-anchor="middle">dns</text>
+      <path class="ln" d="M285 58v36"/>${arrow(285, 102, "d")}<text class="l" x="293" y="84">https</text>
+      <path class="ln" d="M285 144v24M170 168h380M170 168v20M550 168v20"/>${arrow(170, 196, "d")}${arrow(550, 196, "d")}<text class="l" x="360" y="161" text-anchor="middle">lan</text>
+      <path class="dash" d="M625 58v120"/>${arrow(625, 186, "d")}<text class="l" x="617" y="122" text-anchor="end">tailscale · wireguard</text>
+      <text class="l" x="24" y="181">tailscale mesh</text>
+
+      <rect class="bx" x="24" y="196" width="292" height="170"/>
+      <rect class="bx inv" x="24" y="196" width="292" height="30"/><text class="t inv" x="36" y="216">TINYV4 — INFRA NODE</text>
+      <text x="36" y="250">Nginx Proxy Manager · AdGuard DNS</text>
+      <text x="36" y="274">WireGuard · Tailscale subnet router</text>
+      <text x="36" y="298">Prometheus · Grafana · Uptime Kuma</text>
+      <text x="36" y="322">Portainer · Homarr</text>
+      <text x="36" y="346">Listing bots · SparkyFitness</text>
+
+      <rect class="bx" x="404" y="196" width="292" height="170"/>
+      <rect class="bx inv" x="404" y="196" width="292" height="30"/><text class="t inv" x="416" y="216">TINYV9 — DATA &amp; MEDIA NODE</text>
+      <text x="416" y="250">Jellyfin + *arr media stack</text>
+      <text x="416" y="274">VPN-routed downloads (Gluetun)</text>
+      <text x="416" y="298">Ollama · Open WebUI</text>
+      <text x="416" y="322">ezBookkeeping · nutrition trackers</text>
+      <text x="416" y="346">News digest bot · bank bridge</text>
+
+      <path class="ln" d="M316 250h80"/>${arrow(404, 250, "r")}<text class="l" x="360" y="243" text-anchor="middle">proxy</text>
+      <path class="ln" d="M316 298h80"/>${arrow(404, 298, "r")}<text class="l" x="360" y="291" text-anchor="middle">scrape</text>
+      <path class="ln" d="M316 346h80"/>${arrow(404, 346, "r")}<text class="l" x="360" y="339" text-anchor="middle">manage</text>
+
+      <rect class="bx" x="250" y="398" width="220" height="32"/><text class="t" x="360" y="419" text-anchor="middle">TELEGRAM</text>
+      <path class="ln" d="M170 366v48h72"/>${arrow(250, 414, "r")}<text class="l" x="178" y="392">alerts · listings</text>
+      <path class="ln" d="M550 366v48h-72"/>${arrow(470, 414, "l")}<text class="l" x="542" y="392" text-anchor="end">digest · alerts</text>
+    </svg></div>
+    <p class="net-cap">Only the reverse proxy and the VPN face the internet. Everything else is reached over the LAN or the Tailscale mesh.</p>`;
+  },
+
+  services() {
+    return `<h2>Services</h2>
+      <div class="filters" id="svc-filters"></div>
+      <p class="svc-count" id="svc-count"></p>
+      <ul id="svc-list"></ul>`;
+  },
+
+  media() {
+    return `<h2>Media pipeline</h2>
+      <div class="pipe">${LAB.pipeline.map(s => `
+        <div class="stage"><div class="stage-k">${esc(s.k)}</div>
+          <div><div class="tags">${s.apps.map(a => `<span class="tag">${esc(a)}</span>`).join("")}</div><p>${esc(s.d)}</p></div></div>`).join("")}</div>
+      <p class="small muted" style="margin-top:14px">Runs on tinyv9. Library and downloads share one mergerfs pool across the SSD and the NVMe drive.</p>`;
+  },
+
+  projects() {
+    const pill = { live: ["live", "Live"], building: ["inv", "Building"], legacy: ["", "Legacy"] };
+    return `<h2>Things I built</h2>${LAB.projects.map(p => `
+      <article class="proj">
+        <div class="proj-head"><h3>${esc(p.n)}</h3><span class="tag ${pill[p.s][0]}">${pill[p.s][0] === "live" ? '<span class="dot"></span>' : ""}${pill[p.s][1]}</span></div>
+        <p>${esc(p.d)}</p>
+        ${p.pts.length ? `<ul>${p.pts.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+        <div class="tags">${p.tech.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>
+        ${p.url ? `<p style="margin:10px 0 0"><a class="btn" href="${esc(p.url)}" target="_blank" rel="noopener">Source ${UI.ext}</a></p>` : ""}
+      </article>`).join("")}`;
+  },
+
+  monitor() {
+    return `<h2>Monitoring &amp; self-healing</h2><div class="mon">${LAB.monitoring.map(g => `
+      <section class="mon-card"><h3>${esc(g.t)}</h3><ul>${g.items.map(i => `<li><b>${esc(i[0])}</b> — ${esc(i[1])}</li>`).join("")}</ul></section>`).join("")}</div>`;
+  },
+
+  stack() {
+    return `<h2>Stack</h2>${LAB.stack.map(g => `
+      <div class="stack-group"><h3>${esc(g.t)}</h3><div class="tags">${g.items.map(i => `<span class="tag">${esc(i)}</span>`).join("")}</div></div>`).join("")}`;
+  },
+
+  sysmon() {
+    const max = Math.max(...LAB.nodes.map(n => n.containers));
+    const cats = Object.keys(LAB.categories).map(k => [LAB.categories[k], LAB.services.filter(s => s.c === k).length]);
+    const cmax = Math.max(...cats.map(c => c[1]));
+    return `<div class="tiles">${LAB.stats.map(s => `<div class="tile"><b>${esc(s.n)}</b><span>${esc(s.l)}</span></div>`).join("")}</div>
+      <div class="bars">
+        ${LAB.nodes.map(n => `<div class="bar"><span>${esc(n.id)}</span><i style="--v:${Math.round(n.containers / max * 100)}%"></i><em>${n.containers}</em></div>`).join("")}
+      </div>
+      <p class="small muted" style="margin:6px 0 12px">Containers per node</p>
+      <div class="bars">
+        ${cats.map(c => `<div class="bar"><span>${esc(c[0])}</span><i style="--v:${Math.round(c[1] / cmax * 100)}%"></i><em>${c[1]}</em></div>`).join("")}
+      </div>
+      <p class="small muted" style="margin-top:6px">Services by category · snapshot ${esc(LAB.snapshot)}</p>`;
+  },
+
+  log() {
+    return `<h2>Changelog</h2><div class="log">${LAB.changelog.map(g => `
+      <h3>${esc(g.t)}</h3><ul>${g.items.map(i => `<li><b>${esc(i[0])}.</b> ${esc(i[1])}</li>`).join("")}</ul>`).join("")}</div>`;
+  },
+
+  terminal() {
+    return `<div class="term"><div class="term-out" id="term-out" aria-live="polite"></div>
+      <form class="term-in" id="term-form" autocomplete="off"><label for="term-input">guest@flytrap:~$</label><input id="term-input" spellcheck="false" autocapitalize="off" aria-label="Terminal input"></form></div>`;
+  }
+};
+
+/* ════════════════════════════════════════════════════════════════
+   APPS — порядок = порядок иконок. Удали строку, чтобы скрыть окно.
+════════════════════════════════════════════════════════════════ */
+const APPS = [
+  { id: "about",    title: "about",      icon: "about",    w: 380 },
+  { id: "servers",  title: "servers",    icon: "servers",  w: 640 },
+  { id: "network",  title: "network",    icon: "network",  w: 620, flush: true },
+  { id: "services", title: "services",   icon: "services", w: 620 },
+  { id: "media",    title: "media",      icon: "media",    w: 560 },
+  { id: "projects", title: "projects",   icon: "projects", w: 600 },
+  { id: "monitor",  title: "monitoring", icon: "monitor",  w: 600 },
+  { id: "stack",    title: "stack",      icon: "stack",    w: 460 },
+  { id: "sysmon",   title: "sysmon",     icon: "sysmon",   w: 380 },
+  { id: "log",      title: "changelog",  icon: "log",      w: 420 },
+  { id: "terminal", title: "terminal",   icon: "terminal", w: 560, flush: true }
+];
+/* какие окна открыты при загрузке — зависит от размера экрана */
+const defaultOpen = () => [
+  ...(desk.clientWidth >= 1500 ? ["servers"] : []),
+  "network",
+  ...(desk.clientHeight >= 640 ? ["log"] : []),
+  "about", "sysmon"
+];
+
+/* ════════════════════════════════════════════════════════════════
+   WINDOW MANAGER
+════════════════════════════════════════════════════════════════ */
+const $ = s => document.querySelector(s);
+const desk = $("#desktop"), winsEl = $("#wins"), iconsEl = $("#icons"), taskEl = $("#taskbar");
+const W = {};                 // id → {app, el, x, y, open, min}
+let zTop = 10, focused = null, userMoved = false, cascade = 0;
+const mobileMQ = window.matchMedia("(max-width: 820px)");
+const isStacked = () => document.body.classList.contains("stacked");
+
+function build() {
+  APPS.forEach(app => {
+    const b = document.createElement("button");
+    b.className = "icon"; b.dataset.app = app.id;
+    b.innerHTML = `${svg(app.icon)}<span>${app.title}.lab</span>`;
+    b.addEventListener("click", () => openWin(app.id));
+    iconsEl.appendChild(b);
+
+    const el = document.createElement("section");
+    el.className = "win is-closed"; el.id = "win-" + app.id;
+    el.setAttribute("aria-label", app.title);
+    el.innerHTML = `<div class="win-bar">${svg(app.icon, "wi")}<span class="win-title">${app.title}</span>
+        <span class="win-ctl">
+          <button class="b-min" aria-label="Minimise ${app.title}">${UI.min}</button>
+          <button class="b-max" aria-label="Maximise ${app.title}">${UI.max}</button>
+          <button class="b-close" aria-label="Close ${app.title}">${UI.close}</button>
+        </span></div>
+      <div class="win-body${app.flush ? " flush" : ""}">${VIEW[app.id]()}</div>`;
+    winsEl.appendChild(el);
+    const w = W[app.id] = { app, el, x: 0, y: 0, open: false, min: false, icon: b };
+
+    el.addEventListener("pointerdown", () => focusWin(app.id));
+    el.querySelector(".b-min").addEventListener("click", e => { e.stopPropagation(); minimise(app.id); });
+    el.querySelector(".b-max").addEventListener("click", e => { e.stopPropagation(); el.classList.toggle("is-max"); focusWin(app.id); });
+    el.querySelector(".b-close").addEventListener("click", e => { e.stopPropagation(); closeWin(app.id); });
+    el.querySelector(".win-bar").addEventListener("dblclick", e => { if (!e.target.closest("button") && !isStacked()) el.classList.toggle("is-max"); });
+    makeDraggable(w);
+
+    const m = document.createElement("button");
+    m.textContent = app.title + ".lab";
+    m.addEventListener("click", () => { closeMenus(); openWin(app.id); });
+    $("#menu-win-pop").appendChild(m);
+  });
+}
+
+function place(w) { w.el.style.transform = `translate3d(${Math.round(w.x)}px,${Math.round(w.y)}px,0)`; }
+function clamp(w) {
+  const dw = desk.clientWidth, dh = desk.clientHeight;
+  w.x = Math.min(Math.max(w.x, 80 - w.el.offsetWidth), dw - 80);
+  w.y = Math.min(Math.max(w.y, 0), Math.max(0, dh - 38));
+}
+
+function openWin(id, opts = {}) {
+  const w = W[id]; if (!w) return;
+  const fresh = !w.open;
+  w.open = true; w.min = false;
+  w.el.classList.remove("is-closed", "is-min");
+  if (fresh && !isStacked() && !opts.keepPos) {
+    const dw = desk.clientWidth, dh = desk.clientHeight;
+    const width = Math.min(w.app.w, dw - 24);
+    w.el.style.width = width + "px";
+    w.el.style.height = "";
+    w.el.style.maxHeight = Math.max(200, dh - 24) + "px";
+    const step = 30 * (cascade++ % 7);
+    w.x = Math.max(12, Math.min(dw - width - 20, Math.round((dw - width) / 2) - 90 + step));
+    w.y = 14 + step;
+    place(w);
+  }
+  focusWin(id);
+  if (isStacked() && !opts.silent) w.el.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (id === "terminal" && !opts.silent && !mobileMQ.matches) setTimeout(() => $("#term-input").focus({ preventScroll: true }), 0);
+  renderTaskbar();
+}
+function closeWin(id) {
+  const w = W[id]; w.open = false; w.min = false;
+  w.el.classList.add("is-closed"); w.el.classList.remove("is-max", "is-min");
+  if (focused === id) focused = null;
+  renderTaskbar();
+}
+function minimise(id) {
+  const w = W[id]; w.min = true; w.el.classList.add("is-min");
+  if (focused === id) focused = null;
+  renderTaskbar();
+}
+function focusWin(id) {
+  const w = W[id]; if (!w || !w.open) return;
+  if (focused !== id) { w.el.style.zIndex = ++zTop; focused = id; renderTaskbar(); }
+}
+
+function renderTaskbar() {
+  const open = APPS.filter(a => W[a.id].open);
+  taskEl.innerHTML = open.length ? "" : '<span class="taskbar-empty">No open windows. Click an icon on the desktop.</span>';
+  open.forEach(a => {
+    const w = W[a.id], b = document.createElement("button");
+    b.className = "task" + (focused === a.id ? " on" : "") + (w.min ? " min" : "");
+    b.innerHTML = `${svg(a.icon)}<span>${a.title}</span>`;
+    b.title = a.title;
+    b.addEventListener("click", () => {
+      if (isStacked()) return openWin(a.id);
+      if (w.min) return openWin(a.id);
+      if (focused === a.id) return minimise(a.id);
+      focusWin(a.id);
+    });
+    taskEl.appendChild(b);
+  });
+  APPS.forEach(a => W[a.id].icon.classList.toggle("open", W[a.id].open));
+}
+
+/* drag: pointer events + rAF, только transform — без перерисовки layout */
+function makeDraggable(w) {
+  const bar = w.el.querySelector(".win-bar");
+  let sx, sy, ox, oy, raf = 0, active = false;
+  bar.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.target.closest("button") || isStacked() || w.el.classList.contains("is-max")) return;
+    active = true; sx = e.clientX; sy = e.clientY; ox = w.x; oy = w.y;
+    bar.setPointerCapture(e.pointerId); w.el.classList.add("dragging");
+  });
+  bar.addEventListener("pointermove", e => {
+    if (!active) return;
+    w.x = ox + e.clientX - sx; w.y = oy + e.clientY - sy; clamp(w);
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; place(w); });
+  });
+  const end = () => { if (!active) return; active = false; userMoved = true; w.el.classList.remove("dragging"); };
+  bar.addEventListener("pointerup", end);
+  bar.addEventListener("pointercancel", end);
+}
+
+/* начальная раскладка окон */
+function tidy() {
+  if (isStacked()) return;
+  const dw = desk.clientWidth, dh = desk.clientHeight, pad = 18;
+  APPS.forEach(a => W[a.id].el.classList.remove("is-max"));
+  const set = (id, x, y, width, maxH) => {
+    const w = W[id]; if (!w || !w.open) return 0;
+    w.min = false; w.el.classList.remove("is-min");
+    w.el.style.width = Math.round(width) + "px"; w.el.style.height = "";
+    w.el.style.maxHeight = Math.max(170, Math.round(maxH)) + "px";
+    w.x = x; w.y = y; clamp(w); place(w);
+    return w.el.offsetHeight;
+  };
+  const wR = Math.max(340, Math.min(400, dw * 0.28));
+  const xR = dw - wR - pad - 6;
+  const wM = Math.max(380, Math.min(640, xR - pad - 250));
+  const xM = Math.max(pad, xR - pad - wM);
+  const laid = new Set();
+  const freeL = xM - pad - 268;                      // место между иконками и окном network
+  const wideL = W.servers.open && freeL >= 380;
+  const hNet = set("network", xM, pad, wM, dh - pad * 2); laid.add("network");
+  const yLog = Math.min(pad + hNet + pad, dh - 270 - pad);
+  set("log", wideL ? xM : Math.max(pad, xM - 36), yLog, Math.min(440, wM * 0.72), dh - yLog - pad); laid.add("log");
+  const hAbout = set("about", xR, pad, wR, Math.max(330, dh - pad * 3 - 250)); laid.add("about");
+  const ySys = Math.min(pad + hAbout + pad, dh - 260 - pad);
+  set("sysmon", xR, ySys, wR, dh - ySys - pad); laid.add("sysmon");
+  if (wideL) { set("servers", xM - pad - Math.min(freeL, 470), pad + 40, Math.min(freeL, 470), dh - pad * 2 - 40); laid.add("servers"); }
+  ["network", "about", "log", "sysmon"].forEach(id => { if (W[id].open) W[id].el.style.zIndex = ++zTop; });
+  let n = 0;
+  APPS.forEach(a => {
+    const w = W[a.id]; if (!w.open || laid.has(a.id)) return;
+    const width = Math.min(a.w, dw - 24);
+    set(a.id, Math.min(dw - width - 20, 150 + 32 * n), 26 + 32 * n, width, dh - 40 - 32 * n); n++;
+    w.el.style.zIndex = ++zTop;
+  });
+  cascade = n; userMoved = false;
+  renderTaskbar();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SERVICES FILTER
+════════════════════════════════════════════════════════════════ */
+const svcState = { host: "all", cat: "all" };
+function renderServices() {
+  const f = $("#svc-filters"); if (!f) return;
+  const chip = (group, val, label) => `<button class="chip" data-g="${group}" data-v="${val}" aria-pressed="${svcState[group] === val}">${esc(label)}</button>`;
+  f.innerHTML = chip("host", "all", "All nodes") + LAB.nodes.map(n => chip("host", n.id, n.id)).join("") +
+    '<span class="sep"></span>' + chip("cat", "all", "Everything") + Object.entries(LAB.categories).map(([k, v]) => chip("cat", k, v)).join("");
+  const list = LAB.services.filter(s =>
+    (svcState.cat === "all" || s.c === svcState.cat) &&
+    (svcState.host === "all" || s.h === svcState.host || s.h === "both"));
+  $("#svc-count").textContent = `${list.length} of ${LAB.services.length} shown`;
+  $("#svc-list").innerHTML = list.map(s => `<li class="svc">
+      <span class="svc-name">${esc(s.n)}</span>
+      <span class="tags"><span class="tag">${esc(LAB.categories[s.c])}</span><span class="tag inv">${esc(hostLabel(s.h))}</span></span>
+      <span class="svc-desc">${esc(s.d)}</span></li>`).join("") || '<li class="muted">Nothing matches.</li>';
+}
+document.addEventListener("click", e => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  svcState[c.dataset.g] = c.dataset.v; renderServices();
+});
+
+/* ════════════════════════════════════════════════════════════════
+   TERMINAL
+════════════════════════════════════════════════════════════════ */
+function termPrint(text, cls) {
+  const out = $("#term-out"), line = document.createElement("div");
+  if (cls) line.className = cls;
+  line.textContent = text; out.appendChild(line); out.scrollTop = out.scrollHeight;
+}
+const pad = (s, n) => (s + " ".repeat(n)).slice(0, n);
+const CMD = {
+  help: () => ["help            this list", "ls              list windows", "open <name>     open a window", "close <name>    close a window",
+    "neofetch        lab summary", "nodes           hardware", "docker ps [node] running services", "theme           light / dark", "tidy            reset window layout", "clear           clear the screen"].join("\n"),
+  ls: () => APPS.map(a => a.title + ".lab").join("   "),
+  open: a => { const app = APPS.find(x => x.id === a || x.title === a || x.title + ".lab" === a); if (!app) return `open: no such window: ${a || ""}`; openWin(app.id); return `opening ${app.title}.lab`; },
+  close: a => { const app = APPS.find(x => x.id === a || x.title === a || x.title + ".lab" === a); if (!app) return `close: no such window: ${a || ""}`; closeWin(app.id); return `closed ${app.title}.lab`; },
+  neofetch: () => ["   \\ | /     guest@flytrap.lab", "  --(_)--    -----------------", `   / | \\     nodes       ${LAB.nodes.map(n => n.id).join(", ")}`,
+    `     |       os          Ubuntu 24.04 LTS`, `     |       containers  ${containersTotal}`, `    _|_      services    ${LAB.services.length} catalogued`,
+    `             owner       ${LAB.profile.name}`, `             snapshot    ${LAB.snapshot}`].join("\n"),
+  nodes: () => LAB.nodes.map(n => `${pad(n.id, 8)} ${pad(n.cpu.split(" · ")[0], 22)} ${pad(n.ram, 10)} ${n.containers} containers`).join("\n"),
+  docker: (a, b) => {
+    if (a !== "ps") return "usage: docker ps [tinyv4|tinyv9]";
+    const rows = LAB.services.filter(s => s.h !== "cloud" && (!b || s.h === b || s.h === "both"));
+    return [pad("NAME", 24) + pad("NODE", 12) + "CATEGORY", ...rows.map(s => pad(s.n, 24) + pad(hostLabel(s.h), 12) + LAB.categories[s.c])].join("\n");
+  },
+  theme: () => { toggleTheme(); return "theme: " + (document.documentElement.dataset.theme || "light"); },
+  tidy: () => { tidy(); return "windows tidied"; },
+  whoami: () => "guest",
+  sudo: () => "guest is not in the sudoers file. This incident will be reported.",
+  clear: () => { $("#term-out").innerHTML = ""; return ""; }
+};
+function initTerminal() {
+  termPrint("flytrap.lab shell — type 'help'", "d");
+  const hist = []; let hi = 0;
+  const input = $("#term-input");
+  $("#term-form").addEventListener("submit", e => {
+    e.preventDefault();
+    const raw = input.value.trim(); input.value = "";
+    termPrint("guest@flytrap:~$ " + raw, "c");
+    if (!raw) return;
+    hist.push(raw); hi = hist.length;
+    const [cmd, ...args] = raw.toLowerCase().split(/\s+/);
+    const out = CMD[cmd] ? CMD[cmd](...args) : `${cmd}: command not found. Try 'help'.`;
+    if (out) termPrint(out);
+  });
+  input.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp" && hi > 0) { input.value = hist[--hi]; e.preventDefault(); }
+    else if (e.key === "ArrowDown") { hi = Math.min(hist.length, hi + 1); input.value = hist[hi] || ""; e.preventDefault(); }
+  });
+  $("#win-terminal .term").addEventListener("click", e => { if (!window.getSelection().toString() && e.target.tagName !== "INPUT") input.focus({ preventScroll: true }); });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CHROME: theme, layout mode, menus, clock, rail
+════════════════════════════════════════════════════════════════ */
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+function paintToggles() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  $("#btn-theme").innerHTML = dark ? `${UI.sun} Light` : `${UI.moon} Dark`;
+  $("#btn-layout").innerHTML = isStacked() ? `${UI.wins} Windowed` : `${UI.rows} Stacked`;
+}
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next; store.set("flytrap-theme", next); paintToggles();
+}
+function setStacked(on) {
+  document.body.classList.toggle("stacked", on);
+  if (on) { APPS.forEach(a => { if (!W[a.id].open) openWin(a.id, { silent: true }); }); desk.scrollTop = 0; }
+  else { APPS.forEach(a => { if (!defaultOpen().includes(a.id)) closeWin(a.id); }); defaultOpen().forEach(id => openWin(id, { silent: true, keepPos: true })); tidy(); }
+  paintToggles(); renderTaskbar();
+}
+function closeMenus() { document.querySelectorAll(".menu.open").forEach(m => m.classList.remove("open")); }
+document.querySelectorAll(".menu-btn").forEach(b => b.addEventListener("click", e => {
+  e.stopPropagation(); const m = b.parentElement, was = m.classList.contains("open"); closeMenus(); m.classList.toggle("open", !was);
+}));
+document.addEventListener("click", closeMenus);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
+
+const ACT = {
+  "open-all": () => { APPS.forEach(a => openWin(a.id, { silent: true })); },
+  "close-all": () => APPS.forEach(a => closeWin(a.id)),
+  tidy,
+  layout: () => setStacked(!isStacked()),
+  theme: toggleTheme
+};
+document.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => ACT[b.dataset.act]()));
+$("#btn-theme").addEventListener("click", toggleTheme);
+$("#btn-layout").addEventListener("click", () => setStacked(!isStacked()));
+$("#btn-random").addEventListener("click", () => {
+  const closed = APPS.filter(a => !W[a.id].open || W[a.id].min);
+  const pool = closed.length ? closed : APPS;
+  openWin(pool[Math.floor(Math.random() * pool.length)].id);
+});
+document.querySelectorAll("[data-nav]").forEach(a => a.addEventListener("click", e => {
+  e.preventDefault();
+  document.querySelectorAll(".nav-link").forEach(n => n.classList.toggle("on", n === a));
+  const t = a.dataset.nav;
+  if (t === "home") {
+    if (isStacked()) { desk.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    APPS.forEach(x => { if (!defaultOpen().includes(x.id)) closeWin(x.id); });
+    defaultOpen().forEach(id => openWin(id, { silent: true, keepPos: true })); tidy();
+  } else openWin(t);
+}));
+
+function tick() {
+  const d = new Date();
+  const p = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).formatToParts(d)
+    .reduce((o, x) => (o[x.type] = x.value, o), {});
+  $("#clock").textContent = `${p.weekday} ${p.month} ${p.day} ${p.hour}:${p.minute} ${p.dayPeriod || ""}`.toUpperCase().trim();
+}
+
+function buildRail() {
+  const big = "FLYTRAP LAB  ".repeat(4);
+  const names = LAB.services.map(s => s.n);
+  const tick = `<b>NOW RUNNING:</b> ${esc(names.slice(0, 16).join(" — "))}   <b>${containersTotal} CONTAINERS</b> on ${LAB.nodes.map(n => n.id).join(" + ")}   <b>NOW RUNNING:</b> ${esc(names.slice(16, 34).join(" — "))}   `;
+  $("#rail-big").innerHTML = `<span class="rail-text">${big}</span><span class="rail-text">${big}</span>`;
+  $("#rail-tick").innerHTML = `<span class="rail-text">${tick}</span><span class="rail-text">${tick}</span>`;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════════════════════ */
+(function boot() {
+  const saved = store.get("flytrap-theme");
+  if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) document.documentElement.dataset.theme = "dark";
+  build(); buildRail(); renderServices(); initTerminal();
+  tick(); setInterval(tick, 15000);
+
+  if (mobileMQ.matches) setStacked(true);
+  else { defaultOpen().forEach(id => openWin(id, { silent: true, keepPos: true })); tidy(); }
+  paintToggles();
+
+  mobileMQ.addEventListener("change", e => { if (e.matches && !isStacked()) setStacked(true); });
+  let rz = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(rz);
+    rz = setTimeout(() => {
+      if (isStacked()) return;
+      if (!userMoved) tidy(); else APPS.forEach(a => { const w = W[a.id]; if (w.open) { clamp(w); place(w); } });
+    }, 120);
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!isStacked() && !userMoved) tidy(); });
+})();
+</script>
+</body>
+</html>
